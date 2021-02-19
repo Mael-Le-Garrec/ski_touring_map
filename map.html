@@ -38,6 +38,8 @@
 </head>
 
 <body>
+  <!-- Fork me on github -->
+  <a href="https://github.com/Mael-Le-Garrec/ski_touring_map"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
   <div id="map"></div>
 
   <!-- Let's put an overlay on top of the map to tell the user to wait for the huts to load -->
@@ -126,32 +128,10 @@
 
 
     // ------------------------------------------------------------
-    // Function to query OverPass, the API where we'll get our POIs
-    function buildOverpassApiUrl(map, overpassQuery)
-    {
-      // Those bounds are roughly the French Alps and a bit in Switzerland and Italy
-      var bounds = "44.59946692494541, 4.630125461347195, 46.72319697007933, 8.097280867457206";
-      //var bounds = map.getBounds().getSouth() + ',' + map.getBounds().getWest() + ',' + map.getBounds().getNorth() + ',' + map.getBounds().getEast();
-
-      var nodeQuery = 'node[' + overpassQuery + '](' + bounds + ');';
-      var wayQuery = 'way[' + overpassQuery + '](' + bounds + ');';
-      var relationQuery = 'relation[' + overpassQuery + '](' + bounds + ');';
-      var query = '?data=[out:json][timeout:15];(' + nodeQuery + wayQuery + relationQuery + ');out body geom;';
-      var baseUrl = 'https://overpass-api.de/api/interpreter';
-      var resultUrl = baseUrl + query;
-      return resultUrl;
-     }
-    // ------------------------------------------------------------
-
-
-    // ------------------------------------------------------------
     // Define the function that queries certain POIs and displays them
     function get_poi(poi, iconPOI)
     {
-      var queryTextfieldValue = poi;
-      var overpassApiUrl = buildOverpassApiUrl(map, queryTextfieldValue);
-      
-      $.get(overpassApiUrl, function (osmDataAsJson) {
+      $.getJSON(poi, function (osmDataAsJson) {
         var resultAsGeojson = osmtogeojson(osmDataAsJson);
         var resultLayer = L.geoJson(resultAsGeojson, {
           style: function (feature) {
@@ -207,8 +187,8 @@
 
     // ------------------------------------------------------------
     // Get the alpine huts and the wilderness huts
-    get_poi("tourism=alpine_hut", houseIcon);
-    get_poi("tourism=wilderness_hut", hutIcon);
+    get_poi("json/alpine_hut.json", houseIcon);
+    get_poi("json/wilderness_hut.json", hutIcon);
     // ------------------------------------------------------------
   </script>
 </body>
