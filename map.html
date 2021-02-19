@@ -1,0 +1,215 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Ski Touring Planning Map</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.10.3/math.min.js"></script>
+
+  <link rel="stylesheet" href="./dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
+
+  <script src="./dist/leaflet.markercluster-src.js"></script>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="https://unpkg.com/osmtogeojson@2.2.12/osmtogeojson.js"></script>
+  <script src="./dist/querystring.js"></script>
+
+  <meta charset=utf-8>
+
+  <style>
+    #map { 
+      width: 100%; 
+      height: 100%; 
+      position: absolute;
+    }
+
+    #wait {
+      margin-left: 25%;
+      margin-top: 15%;
+      padding: 20px;
+      width: 50%;
+      height: 50%;
+      min-height: 100px;
+      background-color: #adaaa1ee;
+      z-index: 100000;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <!-- Let's put an overlay on top of the map to tell the user to wait for the huts to load -->
+  <div id="wait">
+    <center style="margin-top: 20%;">
+      <h2>Loading Points of Interest</h2>
+      <img src="dist/images/throbber.gif">
+
+      <p>Points of Interest to be loaded:<br> tourism=hut, tourism=wilderness_hut</p>
+    </center>
+  </div>
+
+  <script type="text/javascript">
+    // Define our base tiles: we'll be using the OSM winter map
+    var mapStr = 'https://w3.outdooractive.com/map/v1/png/osm_winter/{z}/{x}/{y}/t.png?project=api-dev-oa';
+    //var mapStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
+
+    // It's useful to have the pistes to know where it's easy to ride
+    // We'll take them from opensnowmap
+    var pistesStr = 'http://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png';
+
+    // Highly inclined slopes are dangerous, it's nice to have a map of those
+    var slopesStr = 'https://tileserver1.openslopemap.org/OSloOVERLAY_LR_All_16/{z}/{x}/{y}.png';
+
+    // Background tiles
+    var base_tiles = L.tileLayer(mapStr,
+        {
+          type: 'map',
+          maxZoom: 17,
+          minZoom: 2,
+        });
+    
+    // Steepeness
+    var slopes_tiles = L.tileLayer(slopesStr,
+        {
+          type: 'map',
+          maxZoom: 16,
+          minZoom: 2,
+          opacity: 0.25,
+        });
+    
+    // Pistes
+    var pistes_tiles = L.tileLayer(pistesStr,
+        {
+          type: 'map',
+          maxZoom: 19,
+          minZoom: 11,
+          opacity: 0.75,
+        });
+
+    // ------------------------------------------------------------
+    // Finally, the map object with our base tiles and the different layers
+    // Get the location in the URL if any
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    var lng = urlParams.get('lng');
+    var lat = urlParams.get('lat');
+    var zoom = urlParams.get('z');
+    if (lat && lng)
+      var center = [lat, lng];
+
+    var map = L.map('map', {
+        center: (center) ? center : L.latLng(46, 5.2),
+        zoom: (zoom) ? zoom : 6, 
+        layers: [base_tiles, slopes_tiles, pistes_tiles]
+    });
+    // ------------------------------------------------------------
+    
+    // ------------------------------------------------------------
+    // Whenever the map moves, update the URL
+    map.on('moveend', function (){
+        var mapCenter = map.getCenter();
+        var mapZoom = map.getZoom();
+
+        var newUrl = UpdateQueryString('z', mapZoom);
+        history.pushState({}, null, newUrl);
+
+        var newUrl = UpdateQueryString('lat', mapCenter.lat);
+        history.pushState({}, null, newUrl);
+
+        var newUrl = UpdateQueryString('lng', mapCenter.lng);
+        history.pushState({}, null, newUrl);
+      }
+    );
+    // ------------------------------------------------------------
+
+
+    // ------------------------------------------------------------
+    // Function to query OverPass, the API where we'll get our POIs
+    function buildOverpassApiUrl(map, overpassQuery)
+    {
+      // Those bounds are roughly the French Alps and a bit in Switzerland and Italy
+      var bounds = "44.59946692494541, 4.630125461347195, 46.72319697007933, 8.097280867457206";
+      //var bounds = map.getBounds().getSouth() + ',' + map.getBounds().getWest() + ',' + map.getBounds().getNorth() + ',' + map.getBounds().getEast();
+
+      var nodeQuery = 'node[' + overpassQuery + '](' + bounds + ');';
+      var wayQuery = 'way[' + overpassQuery + '](' + bounds + ');';
+      var relationQuery = 'relation[' + overpassQuery + '](' + bounds + ');';
+      var query = '?data=[out:json][timeout:15];(' + nodeQuery + wayQuery + relationQuery + ');out body geom;';
+      var baseUrl = 'https://overpass-api.de/api/interpreter';
+      var resultUrl = baseUrl + query;
+      return resultUrl;
+     }
+    // ------------------------------------------------------------
+
+
+    // ------------------------------------------------------------
+    // Define the function that queries certain POIs and displays them
+    function get_poi(poi, iconPOI)
+    {
+      var queryTextfieldValue = poi;
+      var overpassApiUrl = buildOverpassApiUrl(map, queryTextfieldValue);
+      
+      $.get(overpassApiUrl, function (osmDataAsJson) {
+        var resultAsGeojson = osmtogeojson(osmDataAsJson);
+        var resultLayer = L.geoJson(resultAsGeojson, {
+          style: function (feature) {
+            return {color: "#ff0000"};
+          },
+          pointToLayer: function (feature, latlng) {
+            return L.marker(latlng, {icon: iconPOI});
+          },
+          filter: function (feature, layer) {
+            var isPolygon = (feature.geometry) && (feature.geometry.type !== undefined) && (feature.geometry.type === "Polygon");
+            if (isPolygon) {
+              feature.geometry.type = "Point";
+              var polygonCenter = L.latLngBounds(feature.geometry.coordinates[0]).getCenter();
+              feature.geometry.coordinates = [ polygonCenter.lat, polygonCenter.lng ];
+            }
+            return true;
+          },
+          onEachFeature: function (feature, layer) {
+            var popupContent = "";
+            popupContent = popupContent + "<dt>@id</dt><dd>" + feature.properties.type + "/" + feature.properties.id + "</dd>";
+            var keys = Object.keys(feature.properties.tags);
+            keys.forEach(function (key) {
+              popupContent = popupContent + "<dt>" + key + "</dt><dd>" + feature.properties.tags[key] + "</dd>";
+            });
+            popupContent = popupContent + "</dl>"
+            layer.bindPopup(popupContent);
+          }
+        }).addTo(map);
+
+        // Disable the waiting div
+        var counter = document.getElementById("wait").getAttribute('counter');
+        if (counter == 1)
+          document.getElementById("wait").remove();
+        else
+          document.getElementById("wait").setAttribute("counter", 1);
+
+      });
+    }
+
+    // Define icons for out huts
+    var houseIcon = L.icon({
+      iconUrl: 'images/house.png',
+      iconSize: [25, 25],
+      iconAnchor: [16, 37],
+      popupAnchor: [0, -28]
+    });
+    var hutIcon = L.icon({
+      iconUrl: 'images/hut.png',
+      iconSize: [25, 25],
+      iconAnchor: [16, 37],
+      popupAnchor: [0, -28]
+    });
+
+    // ------------------------------------------------------------
+    // Get the alpine huts and the wilderness huts
+    get_poi("tourism=alpine_hut", houseIcon);
+    get_poi("tourism=wilderness_hut", hutIcon);
+    // ------------------------------------------------------------
+  </script>
+</body>
+</html>
