@@ -8,18 +8,25 @@
 
   <link rel="stylesheet" href="./dist/MarkerCluster.css" />
   <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="./dist/leaflet-search.css" />
 
+	<!-- For routing -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+  
   <script src="./dist/leaflet.markercluster-src.js"></script>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
   <script src="https://unpkg.com/osmtogeojson@2.2.12/osmtogeojson.js"></script>
   <script src="./dist/querystring.js"></script>
+  <script src="./dist/leaflet-search.js"></script>
 
   <meta charset=utf-8>
 
   <style>
     #map { 
-      width: 100%; 
-      height: 100%; 
+      width: 100%;
+      height: 100%;
       position: absolute;
     }
 
@@ -34,6 +41,21 @@
       z-index: 100000;
       position: absolute;
     }
+    #legend-slope {
+      display: block;
+      z-index: 100000;
+      position: absolute;
+      bottom: 5;
+      right: 5;
+
+      pointer-events: none;
+      opacity: .85;
+      height: 200px;
+    }
+
+    body{
+      margin: 0px;
+    }
   </style>
 </head>
 
@@ -42,11 +64,14 @@
   <a href="https://github.com/Mael-Le-Garrec/ski_touring_map"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
   <div id="map"></div>
 
+  <!-- Slope legend overlay -->
+  <img src="https://download.openslopemap.org/LegendeOpenSlopeMap.png" id="legend-slope">
+
   <!-- Let's put an overlay on top of the map to tell the user to wait for the huts to load -->
   <div id="wait">
     <center style="margin-top: 20%;">
       <h2>Loading Points of Interest</h2>
-      <img src="dist/images/throbber.gif">
+      <img src="dist/img/loading.gif">
 
       <p>Points of Interest to be loaded:<br> tourism=hut, tourism=wilderness_hut</p>
     </center>
@@ -55,7 +80,7 @@
   <script type="text/javascript">
     // Define our base tiles: we'll be using the OSM winter map
     var mapStr = 'https://w3.outdooractive.com/map/v1/png/osm_winter/{z}/{x}/{y}/t.png?project=api-dev-oa';
-    //var mapStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
+    var mapStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
 
     // It's useful to have the pistes to know where it's easy to ride
     // We'll take them from opensnowmap
@@ -70,6 +95,7 @@
           type: 'map',
           maxZoom: 17,
           minZoom: 2,
+          opacity: 0.7,
         });
     
     // Steepeness
@@ -129,7 +155,7 @@
 
     // ------------------------------------------------------------
     // Define the function that queries certain POIs and displays them
-    function get_poi(poi, iconPOI)
+    function get_poi(poi, iconPOI, show)
     {
       $.getJSON(poi, function (osmDataAsJson) {
         var resultAsGeojson = osmtogeojson(osmDataAsJson);
@@ -138,7 +164,10 @@
             return {color: "#ff0000"};
           },
           pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: iconPOI});
+            var name = feature.properties.tags.name;
+            name = (name) ? name : null;
+
+            return L.marker(latlng, {icon: iconPOI, title: feature.properties.tags.name});
           },
           filter: function (feature, layer) {
             var isPolygon = (feature.geometry) && (feature.geometry.type !== undefined) && (feature.geometry.type === "Polygon");
@@ -154,14 +183,17 @@
             popupContent = popupContent + "<dt>@id</dt><dd>" + feature.properties.type + "/" + feature.properties.id + "</dd>";
             var keys = Object.keys(feature.properties.tags);
             keys.forEach(function (key) {
+              poiKeys.add(key);
               popupContent = popupContent + "<dt>" + key + "</dt><dd>" + feature.properties.tags[key] + "</dd>";
             });
             popupContent = popupContent + "</dl>"
             layer.bindPopup(popupContent);
           }
-        }).addTo(map);
+        })
+        // Add our markers to the map and the layer group
+        resultLayer.addTo(poiLayers);
 
-        // Disable the waiting div
+        // Disable the waiting div after the two loaded JSON
         var counter = document.getElementById("wait").getAttribute('counter');
         if (counter == 1)
           document.getElementById("wait").remove();
@@ -175,20 +207,44 @@
     var houseIcon = L.icon({
       iconUrl: 'images/house.png',
       iconSize: [25, 25],
-      iconAnchor: [16, 37],
+      iconAnchor: [16, 25],
       popupAnchor: [0, -28]
     });
     var hutIcon = L.icon({
       iconUrl: 'images/hut.png',
       iconSize: [25, 25],
-      iconAnchor: [16, 37],
+      iconAnchor: [16, 25],
+      popupAnchor: [0, -28]
+    });
+    var peakIcon = L.icon({
+      iconUrl: 'images/peak.png',
+      iconSize: [25, 25],
+      iconAnchor: [16, 25],
       popupAnchor: [0, -28]
     });
 
     // ------------------------------------------------------------
+    // Define a layer group for the search function
+    var poiLayers = L.layerGroup();
+    var poiKeys = new Set();
+
     // Get the alpine huts and the wilderness huts
-    get_poi("json/alpine_hut.json", houseIcon);
-    get_poi("json/wilderness_hut.json", hutIcon);
+    get_poi("json/alpine_hut.json", houseIcon, true);
+    get_poi("json/wilderness_hut.json", hutIcon, true);
+    //get_poi("json/peak.json", peakIcon, false);
+			
+    // Add the search bar for addresses
+		L.Control.geocoder().addTo(map);
+
+		// And add a search bar for the huts
+    L.control.search({
+      layer: poiLayers,
+      initial: false,
+      propertyName: 'title',
+      buildTip: function(text, val) {
+        return '<a href="#">' + text + '</a>';
+      }
+    }).addTo(map);
     // ------------------------------------------------------------
   </script>
 </body>
