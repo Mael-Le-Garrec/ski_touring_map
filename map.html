@@ -14,6 +14,8 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
+	<!-- For GPX displaying -->
+  <script src="./dist/gpx.min.js"></script>
   
   <script src="./dist/leaflet.markercluster-src.js"></script>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -78,6 +80,19 @@
   </div>
 
   <script type="text/javascript">
+		function msToTime(duration) {
+			var milliseconds = parseInt((duration % 1000) / 100),
+				seconds = Math.floor((duration / 1000) % 60),
+				minutes = Math.floor((duration / (1000 * 60)) % 60),
+				hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+
+			hours = (hours < 10) ? "0" + hours : hours;
+			minutes = (minutes < 10) ? "0" + minutes : minutes;
+			seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+			return hours + "h " + minutes + "m " + seconds + "." + milliseconds + "s";
+		}
+
     // Define our base tiles: we'll be using the OSM winter map
     var mapStr = 'https://w3.outdooractive.com/map/v1/png/osm_winter/{z}/{x}/{y}/t.png?project=api-dev-oa';
     var mapStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
@@ -222,6 +237,20 @@
       iconAnchor: [16, 25],
       popupAnchor: [0, -28]
     });
+		// Define some for the GPX tracks
+    var startIcon = L.icon({
+      iconUrl: 'images/pin-icon-start.png',
+      iconSize: [25, 25],
+      iconAnchor: [16, 25],
+      popupAnchor: [0, -28]
+    });
+    var endIcon = L.icon({
+      iconUrl: 'images/pin-icon-end.png',
+      iconSize: [25, 25],
+      iconAnchor: [16, 25],
+      popupAnchor: [0, -28]
+    });
+
 
     // ------------------------------------------------------------
     // Define a layer group for the search function
@@ -245,7 +274,55 @@
         return '<a href="#">' + text + '</a>';
       }
     }).addTo(map);
+    
     // ------------------------------------------------------------
+    // Look for GPX tracks and add them to the map
+		
+		var fileNames = new Array();
+    $.ajax({
+      url: "./dist/gpx/",
+      success: function(data){
+         $(data).find("td > a").each(function(){
+           if ($(this).attr("href").endsWith(".gpx"))
+           {
+              var gpx = "./dist/gpx/" + $(this).attr("href"); // URL to your GPX file or the GPX itself
+              new L.GPX(gpx, {
+                async: true,
+								marker_options: {
+									startIconUrl: 'images/pin-icon-start.png',
+									endIconUrl: 'images/pin-icon-end.png',
+									shadowUrl: 'images/pin-shadow.png',
+									wptIconUrls: {
+										'': '',
+									},
+									popupAnchor: [0, -50],
+								},
+              }).on('loaded', function(e) {
+								var gpx = e.target
+								
+								var keys = ["Distance", "Total Time", "Start", "End", "Elevation +", "Elevation -", "Max Altitude", "Min Altitude"];
+								var funcs = [(gpx.get_distance() / 1000).toFixed(2) + " km", 
+														 msToTime(gpx.get_total_time()), 
+														 gpx.get_start_time().toUTCString(), 
+														 gpx.get_end_time().toUTCString(), 
+														 (gpx.get_elevation_gain()).toFixed(0) + " m",
+														 (gpx.get_elevation_loss()).toFixed(0) + " m", 
+														 (gpx.get_elevation_max()).toFixed(0) + " m", 
+														 (gpx.get_elevation_min()).toFixed(0) + " m",
+														];
+
+								var popupContent = "";
+								keys.forEach((key, index) => {
+									popupContent = popupContent + "<dt>" + key + "</dt><dd>" + funcs[index] + "<dd>";
+								});
+								gpx.bindPopup(popupContent);
+              }).addTo(map);
+           }  
+         });
+      }
+    }); 
+    console.log(fileNames);
+
   </script>
 </body>
 </html>
