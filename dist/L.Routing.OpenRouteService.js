@@ -180,7 +180,6 @@
 			for (var i = 0; i < waypoints.length; i++) {
 				coordinates.push(new Array(waypoints[i].latLng.lng, waypoints[i].latLng.lat));
 			}
-      console.log(coordinates);
 
       var profile = 'foot-hiking';
 			baseUrl = this.options.serviceUrl + profile + '?start=' + waypoints[0].latLng.lng + ',' + waypoints[0].latLng.lat + 
@@ -202,9 +201,6 @@
       var body = JSON.stringify({coordinates: coordinates});
       var headers = {Authorization: this._apiKey, "Content-Type": "application/json"}
 
-      console.log(finalUrl);
-      console.log(headers);
-      console.log(body);
       return [finalUrl, headers, body];
 		},
 

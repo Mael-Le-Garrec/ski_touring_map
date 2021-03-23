@@ -176,15 +176,16 @@
 
     // ------------------------------------------------------------
     // Finally, the map object with our base tiles and the different layers
-    // Get the location in the URL if any
+    // Get the location in the URL if any 
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     var lng = urlParams.get('lng');
     var lat = urlParams.get('lat');
     var zoom = urlParams.get('z');
+
     if (lat && lng)
       var center = [lat, lng];
-
+    
     var map = L.map('map', {
         center: (center) ? center : L.latLng(46, 5.2),
         zoom: (zoom) ? zoom : 6, 
@@ -379,6 +380,45 @@
 
 
     // ------------------------------------------------------------
+    // waypoints via URL
+    function updateWaypointUrl()
+    {
+      var waypoints = control.getWaypoints();
+      var waypointsUrl = []
+      for (var i = 0; i < waypoints.length; i++)
+      {
+        if (waypoints[i].latLng)
+        {
+          var array = Array(waypoints[i].latLng.lat, waypoints[i].latLng.lng);
+          console.log(array);
+          waypointsUrl.push(array);
+          var newUrl = UpdateQueryString('waypoints', JSON.stringify(waypointsUrl));
+          history.pushState({}, null, newUrl);
+        }
+      }
+    }
+
+    control.getPlan().addEventListener("waypointsspliced", e => {
+      updateWaypointUrl();
+    });
+    control.getPlan().addEventListener("waypointschanged", e => {
+      updateWaypointUrl();
+    });
+
+    var waypoints = urlParams.get('waypoints');
+    if (waypoints)
+    {
+      var points = JSON.parse(waypoints);
+      for (var i = 0; i < points.length; i++)
+        if (i < 2)
+          control.spliceWaypoints(i, 1, new L.latLng(points[i]));
+        else
+          control.spliceWaypoints(i, 0, new L.latLng(points[i]));
+
+    }
+    // ------------------------------------------------------------
+      
+    // ------------------------------------------------------------
 		// Store the position of the cursor
     var cursorLat;
     var cursorLng;
@@ -401,10 +441,10 @@
 			 }
 		});
 		map.addControl(new Coordinates({ position: "bottomleft" }));
-
     
 		// ------------------------------------------------------------
 		// Functions to put the current position to the geocoder and start routing
+
 		function startHere()
 		{
 			var pos = cursorLat + " " + cursorLng;
