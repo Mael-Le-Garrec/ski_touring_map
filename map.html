@@ -263,12 +263,13 @@
     //get_poi("json/peak.json", peakIcon, false);
 			
     // Add the search bar for addresses
-		L.Control.geocoder().addTo(map);
+		L.Control.geocoder({'placeholder': 'Search for locations'}).setPosition('topleft').addTo(map);
 
 		// And add a search bar for the huts
     L.control.search({
       layer: poiLayers,
       initial: false,
+			textPlaceholder: 'Search for huts',
       propertyName: 'title',
       buildTip: function(text, val) {
         return '<a href="#">' + text + '</a>';
@@ -277,7 +278,6 @@
     
     // ------------------------------------------------------------
     // Look for GPX tracks and add them to the map
-		
 		var fileNames = new Array();
     $.ajax({
       url: "./dist/gpx/",
