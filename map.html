@@ -10,12 +10,23 @@
   <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="./dist/leaflet-search.css" />
 
-	<!-- For routing -->
+	<!-- For Geocoding -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 	<!-- For GPX displaying -->
   <script src="./dist/gpx.min.js"></script>
+
+  <!-- For Routing -->
+  <link rel="stylesheet" href="./dist/leaflet-routing-machine.css" />
+  <script src="./dist/leaflet-routing-machine.js"></script>
+  <script src="./dist/L.Routing.OpenRouteService.js"></script>
+  <script src="./dist/polyline.js"></script>
+
+	<!-- Right Click Menu -->
+  <link rel="stylesheet" href="./dist/menu.css" />
+  <script src="./dist/menu.js"></script>
+
   
   <script src="./dist/leaflet.markercluster-src.js"></script>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -62,6 +73,26 @@
 </head>
 
 <body>
+	<!-- Right Click Menu -->
+	<div id="menu">
+		<a href="#" onclick="startHere(); return false;">
+			Start Here<span></span>
+		</a>
+		<a href="#" onclick="endHere(); return false;">
+			End here<span></span>
+		</a>
+		<hr>
+		<a href="#" onclick="copyLocation(); return false;">
+			Copy Location <span></span>
+		</a>
+		<hr>
+		<a href="#">
+			Close
+		</a>
+			<!-- <img src="./images/pin-icon-start.png" />Copy Location <span>Ctrl + ?!</span> -->
+	</div>
+
+
   <!-- Fork me on github -->
   <a href="https://github.com/Mael-Le-Garrec/ski_touring_map"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
   <div id="map"></div>
@@ -80,6 +111,8 @@
   </div>
 
   <script type="text/javascript">
+
+		// helper function to get a time in hours / min / sec instead of millisecs
 		function msToTime(duration) {
 			var milliseconds = parseInt((duration % 1000) / 100),
 				seconds = Math.floor((duration / 1000) % 60),
@@ -92,6 +125,16 @@
 
 			return hours + "h " + minutes + "m " + seconds + "." + milliseconds + "s";
 		}
+
+		// -------------------------------------------------------------
+ 	  // Add a function to get into the clipboard the current location
+    function copyLocation(e)
+    {
+			var pos = cursorLat + " " + cursorLng;
+			navigator.clipboard.writeText(pos).then(function() {}, function() {});
+		}
+
+		// -------------------------------------------------------------
 
     // Define our base tiles: we'll be using the OSM winter map
     var mapStr = 'https://w3.outdooractive.com/map/v1/png/osm_winter/{z}/{x}/{y}/t.png?project=api-dev-oa';
@@ -321,7 +364,58 @@
          });
       }
     }); 
-    console.log(fileNames);
+
+    // ------------------------------------------------------------
+    // Add a routing feature
+		var geocoder =  L.Control.Geocoder.nominatim();
+		var router = new L.Routing.osrmv1({profile: 'foot',});
+    var router = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
+
+		var control = L.Routing.control({
+			routeWhileDragging: true,
+			geocoder: geocoder,
+			router: router,
+		}).addTo(map);
+
+
+    // ------------------------------------------------------------
+		// Store the position of the cursor
+    var cursorLat;
+    var cursorLng;
+		var cursorLatLng;
+		const Coordinates = L.Control.extend({
+    onAdd: map => {
+      const container = L.DomUtil.create("div");
+      map.addEventListener("mousemove", e => {
+          container.innerHTML = `
+          <h2>Latitude 
+            ${e.latlng.lat.toFixed(4)} <br> 
+            Longitude ${e.latlng.lng.toFixed(4)}
+            </h2>
+          `;
+					cursorLat = e.latlng.lat;
+					cursorLng = e.latlng.lng;
+					cursorLatLng = e.latlng;
+			 });
+			 return container;
+			 }
+		});
+		map.addControl(new Coordinates({ position: "bottomleft" }));
+
+    
+		// ------------------------------------------------------------
+		// Functions to put the current position to the geocoder and start routing
+		function startHere()
+		{
+			var pos = cursorLat + " " + cursorLng;
+			control.spliceWaypoints(0, 1, cursorLatLng);
+		}
+		
+		function endHere()
+		{
+			var pos = cursorLat + " " + cursorLng;
+			control.spliceWaypoints(control.getWaypoints().length - 1, 1, cursorLatLng);
+		}
 
   </script>
 </body>
