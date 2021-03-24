@@ -281,17 +281,15 @@
       iconAnchor: [16, 25],
       popupAnchor: [0, -28]
     });
-		// Define some for the GPX tracks
+		// Define some for the GPX tracks and routing
     var startIcon = L.icon({
       iconUrl: 'images/pin-icon-start.png',
-      iconSize: [25, 25],
-      iconAnchor: [16, 25],
+      iconAnchor: [10, 25],
       popupAnchor: [0, -28]
     });
     var endIcon = L.icon({
       iconUrl: 'images/pin-icon-end.png',
-      iconSize: [25, 25],
-      iconAnchor: [16, 25],
+      iconAnchor: [20, 40],
       popupAnchor: [0, -28]
     });
 
@@ -366,17 +364,42 @@
       }
     }); 
 
-    // ------------------------------------------------------------
-    // Add a routing feature
+    // --------------------------------------------------------------------------
+    // Create markers depending on the type of marker: end or start of the route?
+    function createMarker(i, waypoint, n)
+    {
+      var icon = new L.Icon.Default();
+      if (i == 0)
+        icon = startIcon;
+      if (i == n-1)
+        icon = endIcon;
+
+      return L.marker(waypoint.latLng, {
+                  icon: icon,
+                  draggable: true,
+             });
+    }
+    
+    // Add the routing feature itself
 		var geocoder =  L.Control.Geocoder.nominatim();
-		var router = new L.Routing.osrmv1({profile: 'foot',});
     var router = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
+    var plan = new L.Routing.Plan([], {
+                        createMarker: createMarker,
+                        addWaypoints: true,
+                        geocoder: geocoder,
+                        routeur: router,
+                    });
+    var lineOptions = {styles: [{color: 'black', opacity: 0.15, weight: 9}, {color: 'white', opacity: 0.8, weight: 6}, {color: 'red', opacity: 1, weight: 3}]};
 
 		var control = L.Routing.control({
-			routeWhileDragging: true,
+			routeWhileDragging: false,
 			geocoder: geocoder,
 			router: router,
+      plan: plan,
+      lineOptions: lineOptions,
 		}).addTo(map);
+
+    console.log(control.getPlan());
 
 
     // ------------------------------------------------------------
@@ -390,9 +413,8 @@
         if (waypoints[i].latLng)
         {
           var array = Array(waypoints[i].latLng.lat, waypoints[i].latLng.lng);
-          console.log(array);
           waypointsUrl.push(array);
-          var newUrl = UpdateQueryString('waypoints', JSON.stringify(waypointsUrl));
+          var newUrl = UpdateQueryString('waypoints', encodeURIComponent(JSON.stringify(waypointsUrl)));
           history.pushState({}, null, newUrl);
         }
       }
@@ -440,7 +462,7 @@
 			 return container;
 			 }
 		});
-		map.addControl(new Coordinates({ position: "bottomleft" }));
+		map.addControl(new Coordinates({position: "bottomleft" }));
     
 		// ------------------------------------------------------------
 		// Functions to put the current position to the geocoder and start routing
