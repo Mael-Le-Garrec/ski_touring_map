@@ -15950,6 +15950,14 @@ module.exports={
 		getWaypoints: function() {
 			return this._plan.getWaypoints();
 		},
+		
+    getCoordinates: function() {
+			return this._selectedRoute.coordinates;
+		},
+    
+    getElevations: function() {
+			return this._selectedRoute.elevations;
+		},
 
 		setWaypoints: function(waypoints) {
 			this._plan.setWaypoints(waypoints);
@@ -16889,6 +16897,7 @@ module.exports = L.Routing = {
 
 			var j = this._altElements.indexOf(altElem);
 			var alts = this._routes.slice();
+
 			var route = alts.splice(j, 1)[0];
 
 			this.fire('routeselected', {
@@ -18039,8 +18048,8 @@ module.exports = L.Routing = {
 			}
 
 			actualWaypoints = this._toWaypoints(inputWaypoints, response.waypoints);
-
-			for (i = 0; i < response.routes.length; i++) {
+			
+      for (i = 0; i < response.routes.length; i++) {
 				route = this._convertRoute(response.routes[i]);
 				route.inputWaypoints = inputWaypoints;
 				route.waypoints = actualWaypoints;

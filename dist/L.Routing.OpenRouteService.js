@@ -4,7 +4,7 @@
 	// Browserify
 	// var L = require('leaflet');
 	// var corslite = require('corslite');
-
+  //
 	L.Routing = L.Routing || {};
 
 	L.Routing.OpenRouteService = L.Class.extend({
@@ -35,14 +35,6 @@
       headers = builtUrl[1];
       body = builtUrl[2];
 
-			//timer = setTimeout(function () {
-			//	timedOut = true;
-			//	callback.call(context || callback, {
-			//		status: -1,
-			//		message: 'OpenRouteService request timed out.'
-			//	});
-			//}, this.options.timeout);
-
 			for (i = 0; i < waypoints.length; i++) {
 				wp = waypoints[i];
 				wps.push({
@@ -67,24 +59,6 @@
           current._routeDone(data, wps, callback, context);
         });
 
-			//corslite(url, L.bind(function (err, resp) {
-			//	var data;
-
-			//	clearTimeout(timer);
-			//	if (!timedOut) {
-			//		if (!err) {
-			//			// try {
-			//			data = JSON.parse(resp.responseText);
-			//			this._routeDone(data, wps, callback, context);
-			//		} else {
-			//			callback.call(context || callback, {
-			//				status: -1,
-			//				message: 'HTTP request failed: ' + err
-			//			});
-			//		}
-			//	}
-			//}, this));
-
 			return this;
 		},
 
@@ -93,6 +67,7 @@
 			    waypoints,
 			    waypoint,
 			    coordinates,
+          elevations,
 			    i, j, k,
 			    instructions,
 			    distance,
@@ -107,18 +82,11 @@
 
 			context = context || callback;
 
-			//if (!response.routes) {
-			//	callback.call(context, {
-			//		status: response.type,
-			//		message: response.details
-			//	});
-			//	return;
-			//}
-      
 			for (i = 0; i < 1; i++) {
         var path = response.features[i];
 
 				coordinates = this._decodePolyline(path.geometry);
+        elevations = this._getElevations(path.geometry);
 				startingSearchIndex = 0;
 				instructions = [];
 				waypoints = [];
@@ -144,6 +112,7 @@
 				alts.push({
 					name: 'Routing option ' + i,
 					coordinates: coordinates,
+          elevations: elevations,
 					instructions: instructions,
 					summary: {
 						totalDistance: distance,
@@ -157,6 +126,18 @@
 			callback.call(context, null, alts);
 		},
 
+		_getElevations: function (geometry) {
+			var coords = geometry["coordinates"], i;
+
+      var elevations = [];
+      // Get elevations
+      for (i = 0; i < coords.length; i++) {
+         elevations.push(geometry["coordinates"][i][2]);
+      }
+			return elevations;
+		},
+
+
 		_decodePolyline: function (geometry) {
 			var polylineDefined = polyline.fromGeoJSON(geometry);
 			var coords = polyline.decode(polylineDefined, 5),
@@ -165,7 +146,6 @@
 			for (i = 0; i < coords.length; i++) {
 				latlngs[i] = new L.LatLng(coords[i][0], coords[i][1]);
 			}
-
 			return latlngs;
 		},
 
@@ -182,9 +162,6 @@
 			}
 
       var profile = 'foot-hiking';
-			baseUrl = this.options.serviceUrl + profile + '?start=' + waypoints[0].latLng.lng + ',' + waypoints[0].latLng.lat + 
-                                                    '&end=' + waypoints[1].latLng.lng + ',' + waypoints[1].latLng.lat;
-			
       baseUrl = this.options.serviceUrl + profile + '/geojson';
 
       var finalUrl = baseUrl;
@@ -198,7 +175,7 @@
 			//	api_key: this._apiKey
 			//}, this.options.urlParameters), baseUrl);
 
-      var body = JSON.stringify({coordinates: coordinates});
+      var body = JSON.stringify({coordinates: coordinates, elevation: true});
       var headers = {Authorization: this._apiKey, "Content-Type": "application/json"}
 
       return [finalUrl, headers, body];

@@ -27,6 +27,11 @@
   <link rel="stylesheet" href="./dist/menu.css" />
   <script src="./dist/menu.js"></script>
 
+  <!-- For Elevation graph -->
+  <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+  <link rel="stylesheet" href="./dist/leaflet.elevation-0.0.4-d3v4.css" />
+  <script src="./dist/leaflet.elevation-0.0.4-d3v4.src.js"></script>
+
   
   <script src="./dist/leaflet.markercluster-src.js"></script>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -399,8 +404,6 @@
       lineOptions: lineOptions,
 		}).addTo(map);
 
-    console.log(control.getPlan());
-
 
     // ------------------------------------------------------------
     // waypoints via URL
@@ -449,12 +452,6 @@
     onAdd: map => {
       const container = L.DomUtil.create("div");
       map.addEventListener("mousemove", e => {
-          container.innerHTML = `
-          <h2>Latitude 
-            ${e.latlng.lat.toFixed(4)} <br> 
-            Longitude ${e.latlng.lng.toFixed(4)}
-            </h2>
-          `;
 					cursorLat = e.latlng.lat;
 					cursorLng = e.latlng.lng;
 					cursorLatLng = e.latlng;
@@ -465,7 +462,7 @@
 		map.addControl(new Coordinates({position: "bottomleft" }));
     
 		// ------------------------------------------------------------
-		// Functions to put the current position to the geocoder and start routing
+		// Functions to add the current position to the geocoder and start routing
 
 		function startHere()
 		{
@@ -478,6 +475,54 @@
 			var pos = cursorLat + " " + cursorLng;
 			control.spliceWaypoints(control.getWaypoints().length - 1, 1, cursorLatLng);
 		}
+		
+    // ------------------------------------------------------------
+    // Add the elevation once it's done routing
+
+    var el;
+
+    function addElevation()
+    {
+      var coordinates = control.getCoordinates();
+
+      if (el)
+        map.removeLayer(el);
+
+      var divs = document.getElementsByClassName("elevation");
+      if (divs.length > 0)
+        divs[0].remove();
+    
+      var el = L.control.elevation({
+                position: "bottomleft",
+      });
+  		el.addTo(map);
+
+      var geojson = {"name":"NewFeatureType", 
+                     "type":"FeatureCollection",
+                     "features": [
+                       {"type": "Feature",
+                        "geometry": {"type": "LineString", 
+                                     "coordinates":[]
+                                    },
+                         "properties": null
+                       }
+                     ]
+      }
+      var elevations = control.getElevations();
+      for (var i = 0; i < coordinates.length; i++)
+      {
+        var alt = Math.random() * (2800 - 1500) + 1500;
+        geojson['features'][0]['geometry']['coordinates'].push(new Array(coordinates[i].lng, coordinates[i].lat, elevations[i]));
+      }
+    
+      var gjl = L.geoJson(geojson,{
+		    onEachFeature: el.addData.bind(el)
+      });
+    }
+    
+    control.addEventListener("routeselected", e => {
+      addElevation();
+    });
 
   </script>
 </body>
