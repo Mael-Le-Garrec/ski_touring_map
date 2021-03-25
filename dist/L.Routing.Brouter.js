@@ -95,7 +95,7 @@
 				for(j = 1; j < segments.length; j++) {
 					leg = segments[j];
 
-          distance += leg[4] / 10;
+          distance += parseInt(leg[3]);
 
 					//steps = leg.steps;
 					//for(k = 0; k < steps.length; k++) {
