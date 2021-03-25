@@ -71,6 +71,14 @@
       height: 200px;
     }
 
+    .elevation{
+      z-index: 10000;
+      pointer-events: all;
+    }
+    .leaflet-top, .leaflet-bottom {
+      pointer-events: all;
+    }
+
     body{
       margin: 0px;
     }
@@ -478,24 +486,15 @@
 		
     // ------------------------------------------------------------
     // Add the elevation once it's done routing
-
-    var el;
+    var el = L.control.elevation({
+              position: "bottomleft",
+    });
+    el.addTo(map);
 
     function addElevation()
     {
       var coordinates = control.getCoordinates();
-
-      if (el)
-        map.removeLayer(el);
-
-      var divs = document.getElementsByClassName("elevation");
-      if (divs.length > 0)
-        divs[0].remove();
-    
-      var el = L.control.elevation({
-                position: "bottomleft",
-      });
-  		el.addTo(map);
+      el.clear();
 
       var geojson = {"name":"NewFeatureType", 
                      "type":"FeatureCollection",
@@ -510,10 +509,7 @@
       }
       var elevations = control.getElevations();
       for (var i = 0; i < coordinates.length; i++)
-      {
-        var alt = Math.random() * (2800 - 1500) + 1500;
         geojson['features'][0]['geometry']['coordinates'].push(new Array(coordinates[i].lng, coordinates[i].lat, elevations[i]));
-      }
     
       var gjl = L.geoJson(geojson,{
 		    onEachFeature: el.addData.bind(el)
