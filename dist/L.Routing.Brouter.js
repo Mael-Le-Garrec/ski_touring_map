@@ -48,7 +48,6 @@
         })
         .done(function(resp) {
           var data = resp;
-          console.log(data);
           current._routeDone(data, wps, callback, context);
         });
 
@@ -75,8 +74,8 @@
 
 			context = context || callback;
 
-			for (i = 0; i < 1; i++) {
-        var path = response.features[i];
+			for (k = 0; k < 1; k++) {
+        var path = response.features[k];
 
 				coordinates = this._decodePolyline(path.geometry);
         elevations = this._getElevations(path.geometry);
@@ -87,9 +86,7 @@
 				distance = 0;
 
         time = response.features[0].properties['total-time'];
-        console.log("time: " + time);
 
-        console.log(response.features[0]);
         var segments = response.features[0].properties.messages;
 
 				for(j = 1; j < segments.length; j++) {
@@ -108,8 +105,64 @@
 					//}
 				}
 
+        // Compute the total (min, max, total positive) elevation
+        // Total elevation: every meter gained is added
+        var totalPositiveElevation = 0;
+        for (var i = 1; i < elevations.length; i++)
+          if (elevations[i-1] < elevations[i])
+            totalPositiveElevation += elevations[i] - elevations[i-1];
+        
+        var totalNegativeElevation = 0;
+        for (var i = 1; i < elevations.length; i++)
+          if (elevations[i-1] > elevations[i])
+            totalNegativeElevation += elevations[i-1] - elevations[i];
+
+        // MaxElevation: the longest positive segment 
+        var maxElevation = 0;
+        var tmp = [];
+        var threshold = .0;
+        for (var i = 1; i < elevations.length; i++)
+        {
+          if ((elevations[i-1] < elevations[i]) || (elevations[i-1] - elevations[i] < threshold))
+          {
+              tmp.push(elevations[i] - elevations[i-1]);
+          }
+          else
+          {
+            var red = tmp.reduce((a, b) => a + b, 0);
+            if (red > maxElevation)
+              maxElevation = tmp.reduce((a, b) => a + b, 0);
+            tmp = [];
+          }
+        }
+        
+        // MinElevation: the longest negative segment 
+        var minElevation = 0;
+        var tmp = [];
+        var threshold = .0;
+        for (var i = 1; i < elevations.length; i++)
+        {
+          if ((elevations[i] < elevations[i-1]) || (elevations[i-1] - elevations[i] < threshold))
+          {
+              tmp.push(elevations[i-1] - elevations[i]);
+          }
+          else
+          {
+            var red = tmp.reduce((a, b) => a + b, 0);
+            if (red > minElevation)
+              minElevation = tmp.reduce((a, b) => a + b, 0);
+            tmp = [];
+          }
+        }
+
+        // TopElevation: the top point minus the bottom one
+        var topElevation = Math.max.apply(null, elevations) - Math.min.apply(null, elevations);
+
+        // Elevation finish - start
+        var elevation = elevations[elevations.length-1] - elevations[0];
+
 				alts.push({
-					name: 'Routing option ' + i,
+					name: 'Hiking Itinerary',
 					coordinates: coordinates,
           elevations: elevations,
 					instructions: instructions,
@@ -117,6 +170,12 @@
 						totalDistance: distance,
 						totalTime: time,
 					},
+          PositiveElevation: totalPositiveElevation.toFixed(0),
+          NegativeElevation: totalNegativeElevation.toFixed(0),
+          maxLenElevation : maxElevation.toFixed(0),
+          minLenElevation : minElevation.toFixed(0),
+          topElevation: topElevation.toFixed(0),
+          elevation: elevation.toFixed(0),
 					inputWaypoints: inputWaypoints,
 					waypoints: waypoints
 				});
@@ -167,7 +226,6 @@
         baseUrl = baseUrl + coordinates[i][0] + "," + coordinates[i][1] + "|"
       baseUrl = baseUrl + "&profile=" + profile + "&alternativeidx=0&format=geojson"
 
-      console.log(baseUrl);
       return baseUrl;
 		},
 

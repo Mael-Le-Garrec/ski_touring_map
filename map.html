@@ -183,6 +183,16 @@
           minZoom: 2,
           opacity: 0.7,
         });
+
+    // Background tiles for 4uMaps, good for hiking
+    var foruMapsStr = "https://tileserver.4umaps.com/{z}/{x}/{y}.png"
+    var foruMaps_tiles = L.tileLayer(foruMapsStr,
+        {
+          type: 'map',
+          maxZoom: 17,
+          minZoom: 2,
+          opacity: 0.7,
+        });
     
     // Steepeness
     var slopes_tiles = L.tileLayer(slopesStr,
@@ -206,6 +216,7 @@
     // and off the layers
     var baseMaps = {
         "OpenTopoMap": opentopo_tiles,
+        "4uMaps": foruMaps_tiles,
         "OutdoorActive": outdoor_tiles,
     }
     var overlayMaps = {
@@ -228,8 +239,24 @@
     var map = L.map('map', {
         center: (center) ? center : L.latLng(46, 5.2),
         zoom: (zoom) ? zoom : 6, 
-        layers: [opentopo_tiles, slopes_tiles, pistes_tiles]
+        layers: [foruMaps_tiles, slopes_tiles, pistes_tiles]
     });
+
+    // If there's an indication on which map to use, take it
+    var mapSelection = urlParams.get('basemap');
+    if (Object.keys(baseMaps).indexOf(mapSelection) > -1)
+    {
+      map.removeLayer(opentopo_tiles);
+      baseMaps[mapSelection].addTo(map);
+    }
+
+    // Add an event handler to change the querystring when the basemap is changed
+    map.on('baselayerchange', onOverlayAdd);
+    function onOverlayAdd(e){
+       var overlayName = e['name'];
+       var newUrl = UpdateQueryString('basemap', overlayName);
+       history.pushState({}, null, newUrl);
+    }
 
     // ------------------------------------------------------------
     
@@ -442,6 +469,17 @@
 			router: router,
       plan: plan,
       lineOptions: lineOptions,
+      summaryTemplate: `
+        <h2>{name}</h2><h3>{distance}, {time}</h3>
+        <h3><ul>
+          <li>E+: {elevation} m</li>
+          <li>Total E+: {PositiveElevation} m</li>
+          <li>Total E-: {NegativeElevation} m</li>
+          <li>Max Length E+: {maxLenElevation} m</li>
+          <li>Max Length E-: {minLenElevation} m</li>
+          <li>Δ            : {topElevation} m</li>
+        </ul></h3>
+      `
 		}).addTo(map);
 
 
