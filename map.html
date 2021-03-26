@@ -193,6 +193,14 @@
           minZoom: 2,
           opacity: 0.7,
         });
+
+    // Google Satelite maps
+    var googleStr = 'http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
+    googleSat_tiles = L.tileLayer(googleStr,
+        {
+          maxZoom: 20,
+          subdomains:['mt0','mt1','mt2','mt3']
+        });
     
     // Steepeness
     var slopes_tiles = L.tileLayer(slopesStr,
@@ -218,6 +226,7 @@
         "OpenTopoMap": opentopo_tiles,
         "4uMaps": foruMaps_tiles,
         "OutdoorActive": outdoor_tiles,
+        "Satellite": googleSat_tiles,
     }
     var overlayMaps = {
       "Slopes": slopes_tiles,
@@ -251,13 +260,44 @@
     }
 
     // Add an event handler to change the querystring when the basemap is changed
-    map.on('baselayerchange', onOverlayAdd);
-    function onOverlayAdd(e){
+    map.on('baselayerchange', onBaseAdd);
+    function onBaseAdd(e){
        var overlayName = e['name'];
        var newUrl = UpdateQueryString('basemap', overlayName);
        history.pushState({}, null, newUrl);
     }
 
+    var activeLayers = []; // populated after Huts definition
+    // Add event handlers when the overlays are ticked or unticked
+    map.on('overlayadd', onOverlayAdd);
+    function onOverlayAdd(e){
+      // Add the overlay to our list keeping track of them
+      activeLayers.push(e['name']);
+      console.log(activeLayers);
+
+      // Update the URI
+      var overlayNames = activeLayers;
+      console.log(overlayNames);
+      var params = encodeURIComponent(JSON.stringify(overlayNames));
+      var newUrl = UpdateQueryString('overlays', params);
+      history.pushState({}, null, newUrl);
+    }
+    
+    var activeLayers = []; // populated after Huts definition
+    // Add event handlers when the overlays are ticked or unticked
+    map.on('overlayremove', onOverlayRemove);
+    function onOverlayRemove(e){
+      // Add the overlay to our list keeping track of them
+      activeLayers.splice(activeLayers.indexOf(e['name']), 1);
+      console.log(activeLayers);
+
+      // Update the URI
+      var overlayNames = activeLayers;
+      var params = encodeURIComponent(JSON.stringify(overlayNames));
+      var newUrl = UpdateQueryString('overlays', params);
+      history.pushState({}, null, newUrl);
+    }
+    
     // ------------------------------------------------------------
     
     // ------------------------------------------------------------
@@ -388,6 +428,25 @@
     // Add a button to switch everything on/off
     overlayMaps['Huts'] = poiLayers;
     L.control.layers(baseMaps, overlayMaps, {position: 'topleft'}).addTo(map);
+
+    var l = Object.keys(overlayMaps);
+    for (var i = 0; i < l.length; i++)
+      activeLayers.push(l[i]);
+    
+    // If there's an indication on which overlay layers to use
+    // First remove all of them and then add the ones we have
+    var overlaySelection = JSON.parse(urlParams.get('overlays'));
+    if (overlaySelection)
+    {
+      for (var key in overlayMaps)
+      {
+        map.removeLayer(overlayMaps[key]);
+      }
+      for (var i = 0; i < overlaySelection.length; i++)
+      {
+        overlayMaps[overlaySelection[i]].addTo(map);      
+      }
+    } 
     
     // ------------------------------------------------------------
     // Look for GPX tracks and add them to the map
