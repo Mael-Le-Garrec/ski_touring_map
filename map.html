@@ -33,6 +33,13 @@
   <link rel="stylesheet" href="./dist/leaflet.elevation-0.0.4-d3v4.css" />
   <script src="./dist/leaflet.elevation-0.0.4-d3v4.src.js"></script>
 
+  <!-- For control buttons -->
+  <link rel="stylesheet" href="./dist/easy-button.css" />
+  <script src="./dist/easy-button.js"></script>
+
+
+	<!-- Bootstrap icons -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css">
   
   <script src="./dist/leaflet.markercluster-src.js"></script>
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -201,6 +208,12 @@
           maxZoom: 20,
           subdomains:['mt0','mt1','mt2','mt3']
         });
+
+    // Regular OSM
+		var osmStr = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+		var osm_tiles = L.tileLayer(osmStr, {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+		});
     
     // Steepeness
     var slopes_tiles = L.tileLayer(slopesStr,
@@ -215,7 +228,7 @@
     var pistes_tiles = L.tileLayer(pistesStr,
         {
           type: 'map',
-          maxZoom: 19,
+          maxZoom: 18,
           minZoom: 11,
           opacity: 0.75,
         });
@@ -226,6 +239,7 @@
         "OpenTopoMap": opentopo_tiles,
         "4uMaps": foruMaps_tiles,
         "OutdoorActive": outdoor_tiles,
+				"OpenStreetMap": osm_tiles,
         "Satellite": googleSat_tiles,
     }
     var overlayMaps = {
@@ -273,11 +287,9 @@
     function onOverlayAdd(e){
       // Add the overlay to our list keeping track of them
       activeLayers.push(e['name']);
-      console.log(activeLayers);
 
       // Update the URI
       var overlayNames = activeLayers;
-      console.log(overlayNames);
       var params = encodeURIComponent(JSON.stringify(overlayNames));
       var newUrl = UpdateQueryString('overlays', params);
       history.pushState({}, null, newUrl);
@@ -289,7 +301,6 @@
     function onOverlayRemove(e){
       // Add the overlay to our list keeping track of them
       activeLayers.splice(activeLayers.indexOf(e['name']), 1);
-      console.log(activeLayers);
 
       // Update the URI
       var overlayNames = activeLayers;
@@ -499,21 +510,35 @@
     function createMarker(i, waypoint, n)
     {
       var icon = new L.Icon.Default();
+      var title = '';
       if (i == 0)
+      {
         icon = startIcon;
+        title = "Start";
+      }
       if (i == n-1)
+      {
         icon = endIcon;
+        title = "End";
+      }
+
+      if (!title)
+        title = "Via " + i;
 
       return L.marker(waypoint.latLng, {
                   icon: icon,
+                  title: title,
                   draggable: true,
              });
     }
     
     // Add the routing feature itself
 		var geocoder =  L.Control.Geocoder.nominatim();
-    //var router = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
-    var router = new L.Routing.brouter('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
+    var openRouteService = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
+    var brouter = new L.Routing.brouter('');
+		
+		var routers = new Array(openRouteService, brouter);
+		var router = routers[0];
     var plan = new L.Routing.Plan([], {
                         createMarker: createMarker,
                         addWaypoints: true,
@@ -537,13 +562,54 @@
           <li>Max Length E+: {maxLenElevation} m</li>
           <li>Max Length E-: {minLenElevation} m</li>
           <li>Δ            : {topElevation} m</li>
-        </ul></h3>
+        </ul>
+        <center>
+          <input type="button" value="Export to GPX" onclick="exportGPX()">
+        </center>
+        </h3>
       `
 		}).addTo(map);
 
+    
+    // ------------------------------------------------------------
+    // Add a control to change the router
+			
+		var toggle = L.easyButton({
+			states: [
+			{
+				stateName: 'brouter-router',
+        icon: '<img style="width:130%; margin-left:-3px; margin-top:2px;"  src="./dist/img/brt.png">',
+				title: 'Click to Use Brouter Router',
+
+				onClick: function(_control) {
+					_control.state('openrouteservice-router');
+					var waypoints = control.getWaypoints();
+
+					router = routers[1];
+					control.setRouter(router);
+					control.setWaypoints(waypoints);
+				},
+			},
+			{
+				stateName: 'openrouteservice-router',
+        icon: '<img style="width:130%; margin-left:-3px; margin-top:2px;"  src="./dist/img/ors.png">',
+				title: 'Click to Use OpenRouteService Router',
+				onClick: function(_control) {
+					_control.state('brouter-router');
+					var waypoints = control.getWaypoints();
+
+					router = routers[0];
+					control.setRouter(router);
+					control.setWaypoints(waypoints);
+				}
+			}, 
+		]
+		});
+		toggle.addTo(map);
+
 
     // ------------------------------------------------------------
-    // waypoints via URL
+    // Waypoints via URL
     function updateWaypointUrl()
     {
       var waypoints = control.getWaypoints();
@@ -649,6 +715,18 @@
       addElevation();
     });
 
+    // ------------------------------------------------------------
+    // Add a button to export the GPX track
+    function exportGPX()
+    {
+      var baseUrl = "https://brouter.de/brouter?lonlats=";
+      var waypoints = control.getWaypoints();
+      for (var i = 0; i < waypoints.length; i++)
+        baseUrl += waypoints[i].latLng.lng + ',' + waypoints[i].latLng.lat + "|";
+      baseUrl += "&profile=hiking-beta&alternativeidx=0&format=gpx&exportWaypoints=1";
+
+      window.location.href = baseUrl;
+    }
   </script>
 </body>
 </html>

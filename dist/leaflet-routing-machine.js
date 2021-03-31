@@ -15976,6 +15976,10 @@ module.exports={
 		getRouter: function() {
 			return this._router;
 		},
+		
+    setRouter: function(r) {
+			this._router = r;
+		},
 
 		_routeSelected: function(e) {
 			var route = this._selectedRoute = e.route,

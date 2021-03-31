@@ -108,9 +108,65 @@
 						waypoints.push(waypoint);
 					}
 				}
+        
+        // Compute the total (min, max, total positive) elevation
+        // Total elevation: every meter gained is added
+        var totalPositiveElevation = 0;
+        for (var i = 1; i < elevations.length; i++)
+          if (elevations[i-1] < elevations[i])
+            totalPositiveElevation += elevations[i] - elevations[i-1];
+        
+        var totalNegativeElevation = 0;
+        for (var i = 1; i < elevations.length; i++)
+          if (elevations[i-1] > elevations[i])
+            totalNegativeElevation += elevations[i-1] - elevations[i];
+
+        // MaxElevation: the longest positive segment 
+        var maxElevation = 0;
+        var tmp = [];
+        var threshold = .0;
+        for (var i = 1; i < elevations.length; i++)
+        {
+          if ((elevations[i-1] < elevations[i]) || (elevations[i-1] - elevations[i] < threshold))
+          {
+              tmp.push(elevations[i] - elevations[i-1]);
+          }
+          else
+          {
+            var red = tmp.reduce((a, b) => a + b, 0);
+            if (red > maxElevation)
+              maxElevation = tmp.reduce((a, b) => a + b, 0);
+            tmp = [];
+          }
+        }
+        
+        // MinElevation: the longest negative segment 
+        var minElevation = 0;
+        var tmp = [];
+        var threshold = .0;
+        for (var i = 1; i < elevations.length; i++)
+        {
+          if ((elevations[i] < elevations[i-1]) || (elevations[i-1] - elevations[i] < threshold))
+          {
+              tmp.push(elevations[i-1] - elevations[i]);
+          }
+          else
+          {
+            var red = tmp.reduce((a, b) => a + b, 0);
+            if (red > minElevation)
+              minElevation = tmp.reduce((a, b) => a + b, 0);
+            tmp = [];
+          }
+        }
+
+        // TopElevation: the top point minus the bottom one
+        var topElevation = Math.max.apply(null, elevations) - Math.min.apply(null, elevations);
+
+        // Elevation finish - start
+        var elevation = elevations[elevations.length-1] - elevations[0];
 
 				alts.push({
-					name: 'Routing option ' + i,
+					name: 'Hiking Itinerary',
 					coordinates: coordinates,
           elevations: elevations,
 					instructions: instructions,
@@ -118,10 +174,17 @@
 						totalDistance: distance,
 						totalTime: time,
 					},
+          PositiveElevation: totalPositiveElevation.toFixed(0),
+          NegativeElevation: totalNegativeElevation.toFixed(0),
+          maxLenElevation : maxElevation.toFixed(0),
+          minLenElevation : minElevation.toFixed(0),
+          topElevation: topElevation.toFixed(0),
+          elevation: elevation.toFixed(0),
 					inputWaypoints: inputWaypoints,
 					waypoints: waypoints
 				});
 			}
+
 
 			callback.call(context, null, alts);
 		},
