@@ -262,16 +262,8 @@
     var map = L.map('map', {
         center: (center) ? center : L.latLng(46, 5.2),
         zoom: (zoom) ? zoom : 6, 
-        layers: [foruMaps_tiles, slopes_tiles, pistes_tiles]
+        layers: [opentopo_tiles, slopes_tiles, pistes_tiles]
     });
-
-    // If there's an indication on which map to use, take it
-    var mapSelection = urlParams.get('basemap');
-    if (Object.keys(baseMaps).indexOf(mapSelection) > -1)
-    {
-      map.removeLayer(opentopo_tiles);
-      baseMaps[mapSelection].addTo(map);
-    }
 
     // Add an event handler to change the querystring when the basemap is changed
     map.on('baselayerchange', onBaseAdd);
@@ -438,7 +430,15 @@
     
     // Add a button to switch everything on/off
     overlayMaps['Huts'] = poiLayers;
-    L.control.layers(baseMaps, overlayMaps, {position: 'topleft'}).addTo(map);
+    var control_layer = L.control.layers(baseMaps, overlayMaps, {position: 'topleft'}).addTo(map);
+
+    // If there's an indication on which map to use, take it
+    var mapSelection = urlParams.get('basemap');
+    if (Object.keys(baseMaps).indexOf(mapSelection) > -1)
+    {
+      map.removeLayer(opentopo_tiles);
+      baseMaps[mapSelection].addTo(map);
+    }
 
     var l = Object.keys(overlayMaps);
     for (var i = 0; i < l.length; i++)
@@ -525,11 +525,23 @@
       if (!title)
         title = "Via " + i;
 
-      return L.marker(waypoint.latLng, {
-                  icon: icon,
-                  title: title,
-                  draggable: true,
-             });
+      var marker =  L.marker(waypoint.latLng, {
+              icon: icon,
+              title: title,
+              draggable: true,
+      });
+
+      var popup = '<a href="#" onClick="removeWaypoint(' + i + ')">Remove waypoint</a>';
+      marker.bindPopup(popup);
+
+      return marker;
+    }
+
+    // Add the possibility to remove the waypoint via the popup
+    function removeWaypoint(waypoint)
+    {
+      // Remove at index 'waypoint' one element
+			control.spliceWaypoints(waypoint, 1);
     }
     
     // Add the routing feature itself
@@ -666,7 +678,6 @@
     
 		// ------------------------------------------------------------
 		// Functions to add the current position to the geocoder and start routing
-
 		function startHere()
 		{
 			var pos = cursorLat + " " + cursorLng;
