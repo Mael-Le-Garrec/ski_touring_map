@@ -108,6 +108,9 @@
 			End here<span></span>
 		</a>
 		<hr>
+		<a href="#" onclick="createMarkerUrl(); return false;">
+			Create Marker <span></span>
+		</a>
 		<a href="#" onclick="copyLocation(); return false;">
 			Copy Location <span></span>
 		</a>
@@ -163,7 +166,7 @@
 		// -------------------------------------------------------------
 
     // Define our base tiles: we'll be using the OSM winter map
-    var outdoorStr = 'https://w3.outdooractive.com/map/v1/png/osm_winter/{z}/{x}/{y}/t.png?project=api-dev-oa';
+    var outdoorStr = 'https://w3.outdooractive.com/map/v1/png/osm/{z}/{x}/{y}/t.png?project=api-dev-oa';
     var opentopoStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
 
     // It's useful to have the pistes to know where it's easy to ride
@@ -300,7 +303,6 @@
       var newUrl = UpdateQueryString('overlays', params);
       history.pushState({}, null, newUrl);
     }
-    
     // ------------------------------------------------------------
     
     // ------------------------------------------------------------
@@ -320,7 +322,73 @@
       }
     );
     // ------------------------------------------------------------
+    
+    // ------------------------------------------------------------
+		// Store the position of the cursor
+    var cursorLat;
+    var cursorLng;
+		var cursorLatLng;
+		const Coordinates = L.Control.extend({
+    onAdd: map => {
+      const container = L.DomUtil.create("div");
+      map.addEventListener("mousemove", e => {
+					cursorLat = e.latlng.lat;
+					cursorLng = e.latlng.lng;
+					cursorLatLng = e.latlng;
+			 });
+			 return container;
+			 }
+		});
+		map.addControl(new Coordinates({position: "bottomleft" }));
+    // ------------------------------------------------------------
+    
+    // ------------------------------------------------------------
+    // Check if we got a market in the URL for pointing stuff out
+    function createMarkerUrl(position, popup)
+    {
+        // if the position isn't supplied, assume it's the cursor 
+      if (!position)
+        position = [cursorLat, cursorLng];
 
+      var markerObj = new L.marker(position).addTo(map);
+
+      // Add a popup
+      if (popup && popup != "")
+        markerObj.bindPopup(popup);
+      else
+        markerObj.bindPopup("Marker created by user");
+
+      // Update the URI
+      if (popup)
+        var marker = new Array(position[0], position[1], popup);
+      else
+        var marker = new Array(position[0], position[1]);
+      
+      var markersUrl = JSON.parse(urlParams.get('markers'));
+      if (!markersUrl)
+        markersUrl = new Array();
+
+      if (!markersUrl.includes(marker))
+      {
+        markersUrl.push(marker);
+        var strMarkers = encodeURI(JSON.stringify(markersUrl));
+        var newUrl = UpdateQueryString('markers', strMarkers);
+        history.pushState({}, null, newUrl);
+      }
+    }
+
+    // Get the data from the URI
+    var markersUrl = JSON.parse(urlParams.get('markers'));
+    if (markersUrl)
+    {
+      for (var markerPoint of markersUrl)
+      {
+        var markerPos = markerPoint.slice(0, 2);
+        var markerPopup = markerPoint.slice(2)[0];
+        createMarkerUrl(markerPos, markerPopup);
+      }
+    }
+    // ------------------------------------------------------------
 
     // ------------------------------------------------------------
     // Define the function that queries certain POIs and displays them
@@ -658,23 +726,6 @@
     }
     // ------------------------------------------------------------
       
-    // ------------------------------------------------------------
-		// Store the position of the cursor
-    var cursorLat;
-    var cursorLng;
-		var cursorLatLng;
-		const Coordinates = L.Control.extend({
-    onAdd: map => {
-      const container = L.DomUtil.create("div");
-      map.addEventListener("mousemove", e => {
-					cursorLat = e.latlng.lat;
-					cursorLng = e.latlng.lng;
-					cursorLatLng = e.latlng;
-			 });
-			 return container;
-			 }
-		});
-		map.addControl(new Coordinates({position: "bottomleft" }));
     
 		// ------------------------------------------------------------
 		// Functions to add the current position to the geocoder and start routing
