@@ -15,8 +15,10 @@ save_pois()
 bounds="44.59946692494541,4.630125461347195,46.72319697007933,8.097280867457206"
 
 jsondir="./json"
-save_pois "$bounds" "tourism=alpine_hut" "$jsondir/alpine_hut.json"
-sleep 10
-save_pois "$bounds" "tourism=wilderness_hut" "$jsondir/wilderness_hut.json"
-sleep 10
-save_pois "$bounds" "natural=peak" "$jsondir/peak.json"
+#save_pois "$bounds" "tourism=alpine_hut" "$jsondir/alpine_hut.json"
+#sleep 10
+#save_pois "$bounds" "tourism=wilderness_hut" "$jsondir/wilderness_hut.json"
+#sleep 10
+save_pois "$bounds" "tourism=viewpoint" "$jsondir/viewpoint.json"
+#sleep 10
+#save_pois "$bounds" "natural=peak" "$jsondir/peak.json"

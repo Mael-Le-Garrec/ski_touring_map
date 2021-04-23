@@ -135,7 +135,7 @@
       <h2>Loading Points of Interest</h2>
       <img src="dist/img/loading.gif">
 
-      <p>Points of Interest to be loaded:<br> tourism=hut, tourism=wilderness_hut</p>
+      <p>Points of Interest to be loaded:<br> tourism=hut, tourism=wilderness_hut, tourism=viewpoint</p>
     </center>
   </div>
 
@@ -342,21 +342,31 @@
 		map.addControl(new Coordinates({position: "bottomleft" }));
     // ------------------------------------------------------------
     
+    var orangeIcon = L.icon({
+      iconUrl: 'images/marker-icon-orange.png',
+      iconAnchor: [12, 40],
+      popupAnchor: [3, -45]
+    });
+
     // ------------------------------------------------------------
     // Check if we got a market in the URL for pointing stuff out
-    function createMarkerUrl(position, popup)
+    var listMarkers = new Array();
+    function createMarkerUrl(position, popup, notAddToUri)
     {
         // if the position isn't supplied, assume it's the cursor 
       if (!position)
         position = [cursorLat, cursorLng];
 
-      var markerObj = new L.marker(position).addTo(map);
+      var markerObj = new L.marker(position, {icon: orangeIcon}).addTo(map);
 
       // Add a popup
-      if (popup && popup != "")
-        markerObj.bindPopup(popup);
-      else
-        markerObj.bindPopup("Marker created by user");
+      //if (!popup || popup == "")
+      //  popup = "Marker created by user";
+      var popupFinal = '<a href="#" onClick="removeOpenMarker()">Remove marker</a><br>' 
+      if (popup)
+        popupFinal += popup;
+
+      markerObj.bindPopup(popupFinal);
 
       // Update the URI
       if (popup)
@@ -368,7 +378,8 @@
       if (!markersUrl)
         markersUrl = new Array();
 
-      if (!markersUrl.includes(marker))
+      listMarkers.push(marker);
+      if (!notAddToUri)
       {
         markersUrl.push(marker);
         var strMarkers = encodeURI(JSON.stringify(markersUrl));
@@ -385,14 +396,58 @@
       {
         var markerPos = markerPoint.slice(0, 2);
         var markerPopup = markerPoint.slice(2)[0];
-        createMarkerUrl(markerPos, markerPopup);
+        createMarkerUrl(markerPos, markerPopup, true);
       }
+    }
+
+    // Add a callback to store the current open marker
+    var currentOpenMarker;
+    map.on('popupopen', function(e) {
+        currentOpenMarker = e.popup._source;
+    });
+
+    // function to remove marker
+    function removeOpenMarker()
+    {
+      // remove the marker from the URI
+      var markersUrl = JSON.parse(urlParams.get('markers'));
+      var index = null; // Index to remove
+      var found = false;
+      var i;
+      for (i = 0; i < listMarkers.length; i++)
+      {
+        var markerPoint = listMarkers[i];
+        var lat = currentOpenMarker.getLatLng().lat;
+        var lng = currentOpenMarker.getLatLng().lng;
+
+        if (markerPoint[0] == lat && markerPoint[1] == lng)
+        {
+          index = i;
+          found = true;
+          break;
+        }
+      }
+      if (found)
+        listMarkers.splice(i, 1);
+
+      // Update the map
+      var strMarkers = encodeURI(JSON.stringify(listMarkers));
+      var newUrl;
+      if (listMarkers.length != 0)
+        newUrl = UpdateQueryString('markers', strMarkers);
+      else
+        newUrl = UpdateQueryString('markers', null);
+      history.pushState({}, null, newUrl);
+      
+      // and from the map
+      map.removeLayer(currentOpenMarker);
+      currentOpenMarker = null;     
     }
     // ------------------------------------------------------------
 
     // ------------------------------------------------------------
     // Define the function that queries certain POIs and displays them
-    function get_poi(poi, iconPOI, show)
+    function get_poi(poi, iconPOI, show, maxPoi, layer)
     {
       $.getJSON(poi, function (osmDataAsJson) {
         var resultAsGeojson = osmtogeojson(osmDataAsJson);
@@ -428,19 +483,29 @@
           }
         })
         // Add our markers to the map and the layer group
-        resultLayer.addTo(poiLayers);
+        resultLayer.addTo(layer);
 
         // Disable the waiting div after the two loaded JSON
-        var counter = document.getElementById("wait").getAttribute('counter');
-        if (counter == 1)
+        var counter = parseInt(document.getElementById("wait").getAttribute('counter'));
+        if (!counter)
+          counter = 0;
+
+        if (counter == (maxPoi - 1))
           document.getElementById("wait").remove();
         else
-          document.getElementById("wait").setAttribute("counter", 1);
-
+        {
+          document.getElementById("wait").setAttribute("counter", counter + 1);
+        }
       });
     }
 
     // Define icons for out huts
+    var viewpointIcon = L.icon({
+      iconUrl: 'images/viewpoint.png',
+      iconSize: [25, 25],
+      iconAnchor: [16, 25],
+      popupAnchor: [0, -28]
+    });
     var houseIcon = L.icon({
       iconUrl: 'images/house.png',
       iconSize: [25, 25],
@@ -467,19 +532,21 @@
     });
     var endIcon = L.icon({
       iconUrl: 'images/pin-icon-end.png',
-      iconAnchor: [20, 40],
+      iconAnchor: [10, 25],
       popupAnchor: [0, -28]
     });
-
 
     // ------------------------------------------------------------
     // Define a layer group for the search function
     var poiLayers = L.layerGroup();
+    var viewpointLayer = L.layerGroup();
     var poiKeys = new Set();
 
     // Get the alpine huts and the wilderness huts
-    get_poi("json/alpine_hut.json", houseIcon, true);
-    get_poi("json/wilderness_hut.json", hutIcon, true);
+    var maxPoi = 2
+    get_poi("json/alpine_hut.json", houseIcon, true, maxPoi, poiLayers);
+    get_poi("json/wilderness_hut.json", hutIcon, true, maxPoi, poiLayers);
+    //get_poi("json/viewpoint.json", viewpointIcon, true, maxPoi, viewpointLayer);
     //get_poi("json/peak.json", peakIcon, false);
 			
     // Add the search bar for addresses
@@ -498,6 +565,7 @@
     
     // Add a button to switch everything on/off
     overlayMaps['Huts'] = poiLayers;
+    //overlayMaps['Viewpoints'] = viewpointLayer;
     var control_layer = L.control.layers(baseMaps, overlayMaps, {position: 'topleft'}).addTo(map);
 
     // If there's an indication on which map to use, take it
@@ -529,52 +597,57 @@
     
     // ------------------------------------------------------------
     // Look for GPX tracks and add them to the map
+    // Only show them if asked (gpx=1)
+    var showGpx = JSON.parse(urlParams.get('showGpx'));
 		var fileNames = new Array();
-    $.ajax({
-      url: "./dist/gpx/",
-      success: function(data){
-         $(data).find("td > a").each(function(){
-           if ($(this).attr("href").endsWith(".gpx"))
-           {
-              var gpx = "./dist/gpx/" + $(this).attr("href"); // URL to your GPX file or the GPX itself
-              new L.GPX(gpx, {
-                async: true,
-								marker_options: {
-									startIconUrl: 'images/pin-icon-start.png',
-									endIconUrl: 'images/pin-icon-end.png',
-									shadowUrl: 'images/pin-shadow.png',
-									wptIconUrls: {
-										'': '',
-									},
-									popupAnchor: [0, -50],
-								},
-              }).on('loaded', function(e) {
-								var gpx = e.target
-								
-								var keys = ["Distance", "Total Time", "Start", "End", "Elevation +", "Elevation -", "Max Altitude", "Min Altitude"];
-								var funcs = [(gpx.get_distance() / 1000).toFixed(2) + " km", 
-														 msToTime(gpx.get_total_time()), 
-														 gpx.get_start_time().toUTCString(), 
-														 gpx.get_end_time().toUTCString(), 
-														 (gpx.get_elevation_gain()).toFixed(0) + " m",
-														 (gpx.get_elevation_loss()).toFixed(0) + " m", 
-														 (gpx.get_elevation_max()).toFixed(0) + " m", 
-														 (gpx.get_elevation_min()).toFixed(0) + " m",
-														];
+    
+    if (showGpx)
+      $.ajax({
+        url: "./dist/gpx/",
+        success: function(data){
+           $(data).find("td > a").each(function(){
+             if ($(this).attr("href").endsWith(".gpx"))
+             {
+                var gpx = "./dist/gpx/" + $(this).attr("href"); // URL to your GPX file or the GPX itself
+                new L.GPX(gpx, {
+                  async: true,
+                  marker_options: {
+                    startIconUrl: 'images/pin-icon-start.png',
+                    endIconUrl: 'images/pin-icon-end.png',
+                    shadowUrl: 'images/pin-shadow.png',
+                    wptIconUrls: {
+                      '': '',
+                    },
+                    popupAnchor: [0, -50],
+                  },
+                }).on('loaded', function(e) {
+                  var gpx = e.target
+                  
+                  var keys = ["Distance", "Total Time", "Start", "End", "Elevation +", "Elevation -", "Max Altitude", "Min Altitude"];
+                  var funcs = [(gpx.get_distance() / 1000).toFixed(2) + " km", 
+                               msToTime(gpx.get_total_time()), 
+                               gpx.get_start_time().toUTCString(), 
+                               gpx.get_end_time().toUTCString(), 
+                               (gpx.get_elevation_gain()).toFixed(0) + " m",
+                               (gpx.get_elevation_loss()).toFixed(0) + " m", 
+                               (gpx.get_elevation_max()).toFixed(0) + " m", 
+                               (gpx.get_elevation_min()).toFixed(0) + " m",
+                              ];
 
-								var popupContent = "";
-								keys.forEach((key, index) => {
-									popupContent = popupContent + "<dt>" + key + "</dt><dd>" + funcs[index] + "<dd>";
-								});
-								gpx.bindPopup(popupContent);
-              }).addTo(map);
-           }  
-         });
-      }
-    }); 
+                  var popupContent = "";
+                  keys.forEach((key, index) => {
+                    popupContent = popupContent + "<dt>" + key + "</dt><dd>" + funcs[index] + "<dd>";
+                  });
+                  gpx.bindPopup(popupContent);
+                }).addTo(map);
+             }  
+           });
+        }
+      }); 
 
     // --------------------------------------------------------------------------
     // Create markers depending on the type of marker: end or start of the route?
+
     function createMarker(i, waypoint, n)
     {
       var icon = new L.Icon.Default();
