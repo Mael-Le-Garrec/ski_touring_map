@@ -166,7 +166,8 @@
 		// -------------------------------------------------------------
 
     // Define our base tiles: we'll be using the OSM winter map
-    var outdoorStr = 'https://w3.outdooractive.com/map/v1/png/osm/{z}/{x}/{y}/t.png?project=api-dev-oa';
+    var outdoorWinterStr = 'https://w3.outdooractive.com/map/v1/png/osm_winter/{z}/{x}/{y}/t.png?project=api-dev-oa';
+    var outdoorSummerStr = 'https://w3.outdooractive.com/map/v1/png/osm/{z}/{x}/{y}/t.png?project=api-dev-oa';
     var opentopoStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
 
     // It's useful to have the pistes to know where it's easy to ride
@@ -176,8 +177,38 @@
     // Highly inclined slopes are dangerous, it's nice to have a map of those
     var slopesStr = 'https://tileserver1.openslopemap.org/OSloOVERLAY_LR_All_16/{z}/{x}/{y}.png';
 
+    function layerUrl(key, layer) {
+        return "https://wxs.ign.fr/" + key
+            + "/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&"
+            + "LAYER=" + layer + "&STYLE=normal&TILEMATRIXSET=PM&"
+            + "TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image%2Fpng";
+    }
+
+    var ign_tiles_v2 = L.tileLayer(
+        layerUrl(
+            "jtx4nkdcjqhbizt9zkph85ut", "GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2"
+        ),
+        {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>'}
+      );
+    
+      var ign_slopes = L.tileLayer(
+        layerUrl(
+            "jtx4nkdcjqhbizt9zkph85ut", "GEOGRAPHICALGRIDSYSTEMS.SLOPES.MOUNTAIN"
+        ),
+        {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>',
+         opacity: 0.5,
+        }
+    );
+
     // Background tiles for outdoor active
-    var outdoor_tiles = L.tileLayer(outdoorStr,
+    var outdoorSummer_tiles = L.tileLayer(outdoorSummerStr,
+        {
+          type: 'map',
+          maxZoom: 17,
+          minZoom: 2,
+          opacity: 0.7,
+        });
+    var outdoorWinter_tiles = L.tileLayer(outdoorWinterStr,
         {
           type: 'map',
           maxZoom: 17,
@@ -241,13 +272,23 @@
     var baseMaps = {
         "OpenTopoMap": opentopo_tiles,
         "4uMaps": foruMaps_tiles,
-        "OutdoorActive": outdoor_tiles,
+        "OutdoorActive Summer": outdoorSummer_tiles,
+        "OutdoorActive Winter": outdoorWinter_tiles,
 				"OpenStreetMap": osm_tiles,
+        "IGN": ign_tiles_v2,
         "Satellite": googleSat_tiles,
     }
     var overlayMaps = {
       "Slopes": slopes_tiles,
+      "IGN Slopes": ign_slopes,
       "Ski Pistes": pistes_tiles,
+    }
+    // Create an array for the default overlays to show
+    var defaultOverlays = ["Slopes", "Ski Pistes"];
+    var defaultOverlaysTiles = [];
+    for (const [key, value] of Object.entries(overlayMaps)) {
+      if (defaultOverlays.includes(key))
+        defaultOverlaysTiles.push(value);
     }
 
     // ------------------------------------------------------------
@@ -265,7 +306,7 @@
     var map = L.map('map', {
         center: (center) ? center : L.latLng(46, 5.2),
         zoom: (zoom) ? zoom : 6, 
-        layers: [opentopo_tiles, slopes_tiles, pistes_tiles]
+        layers: [opentopo_tiles].concat(defaultOverlaysTiles),
     });
 
     // Add an event handler to change the querystring when the basemap is changed
@@ -281,6 +322,9 @@
     map.on('overlayadd', onOverlayAdd);
     function onOverlayAdd(e){
       // Add the overlay to our list keeping track of them
+      if (activeLayers.includes(e['name']))
+        return;
+
       activeLayers.push(e['name']);
 
       // Update the URI
@@ -290,7 +334,6 @@
       history.pushState({}, null, newUrl);
     }
     
-    var activeLayers = []; // populated after Huts definition
     // Add event handlers when the overlays are ticked or unticked
     map.on('overlayremove', onOverlayRemove);
     function onOverlayRemove(e){
@@ -576,24 +619,26 @@
       baseMaps[mapSelection].addTo(map);
     }
 
-    var l = Object.keys(overlayMaps);
-    for (var i = 0; i < l.length; i++)
+    // Add the huts to the defaultOverlays
+    defaultOverlays.push("Huts");
+    var l = defaultOverlays;
+    for (var i = 0; i < defaultOverlays.length; i++)
       activeLayers.push(l[i]);
     
     // If there's an indication on which overlay layers to use
     // First remove all of them and then add the ones we have
     var overlaySelection = JSON.parse(urlParams.get('overlays'));
-    if (overlaySelection)
+    if (!overlaySelection)
+      overlaySelection = ddefaultOverlays;
+
+    for (var key of defaultOverlays)
     {
-      for (var key in overlayMaps)
-      {
-        map.removeLayer(overlayMaps[key]);
-      }
-      for (var i = 0; i < overlaySelection.length; i++)
-      {
-        overlayMaps[overlaySelection[i]].addTo(map);      
-      }
-    } 
+      map.removeLayer(overlayMaps[key]);
+    }
+    for (var i = 0; i < overlaySelection.length; i++)
+    {
+      overlayMaps[overlaySelection[i]].addTo(map);      
+    }
     
     // ------------------------------------------------------------
     // Look for GPX tracks and add them to the map
