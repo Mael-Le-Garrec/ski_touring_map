@@ -718,6 +718,7 @@
       });
 
       var popup = '<a href="#" onClick="removeWaypoint(' + i + ')">Remove waypoint</a>';
+      var popup = popup + '<br><br><a href="#" onClick="invertRoute()">Invert Route</a>';
       marker.bindPopup(popup);
 
       return marker;
@@ -728,6 +729,13 @@
     {
       // Remove at index 'waypoint' one element
 			control.spliceWaypoints(waypoint, 1);
+    }
+
+    // Add the possibility to invert the route
+    function invertRoute()
+    {
+      var wp = control.getWaypoints().reverse();
+      control.setWaypoints(wp);
     }
     
     // Add the routing feature itself
