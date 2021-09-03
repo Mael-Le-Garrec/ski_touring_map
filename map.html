@@ -23,6 +23,8 @@
   <script src="./dist/L.Routing.OpenRouteService.js"></script>
   <script src="./dist/L.Routing.Brouter.js"></script>
   <script src="./dist/polyline.js"></script>
+  <script src="./dist/leaflet-controls-routing.js"></script> <!-- for the dropdown menu -->
+  <link rel="stylesheet" href="./dist/leaflet-controls-routing.css"> <!-- for the dropdown menu -->
 
 	<!-- Right Click Menu -->
   <link rel="stylesheet" href="./dist/menu.css" />
@@ -549,6 +551,12 @@
       iconAnchor: [16, 25],
       popupAnchor: [0, -28]
     });
+    var paraglidingIcon = L.icon({
+      iconUrl: 'images/paraglider.png',
+      iconSize: [25, 25],
+      iconAnchor: [16, 25],
+      popupAnchor: [0, -28]
+    });
     var houseIcon = L.icon({
       iconUrl: 'images/house.png',
       iconSize: [25, 25],
@@ -583,6 +591,7 @@
     // Define a layer group for the search function
     var poiLayers = L.layerGroup();
     var viewpointLayer = L.layerGroup();
+    var paraglidingLayer = L.layerGroup();
     var poiKeys = new Set();
 
     // Get the alpine huts and the wilderness huts
@@ -591,6 +600,7 @@
     get_poi("json/wilderness_hut.json", hutIcon, true, maxPoi, poiLayers);
     //get_poi("json/viewpoint.json", viewpointIcon, true, maxPoi, viewpointLayer);
     //get_poi("json/peak.json", peakIcon, false);
+    get_poi("json/paragliding.json", paraglidingIcon, true, maxPoi, paraglidingLayer);
 			
     // Add the search bar for addresses
 		L.Control.geocoder({'placeholder': 'Search for locations'}).setPosition('topleft').addTo(map);
@@ -608,6 +618,7 @@
     
     // Add a button to switch everything on/off
     overlayMaps['Huts'] = poiLayers;
+    overlayMaps['Paragliding'] = paraglidingLayer;
     //overlayMaps['Viewpoints'] = viewpointLayer;
 
     // ------------------------------------------------------------
@@ -682,7 +693,6 @@
     // If there's an indication on which overlay layers to use
     // First remove all of them and then add the ones we have
     var overlaySelection = JSON.parse(urlParams.get('overlays'));
-    console.log(overlaySelection);
     if (!overlaySelection)
       overlaySelection = defaultOverlays;
 
@@ -748,6 +758,7 @@
     var openRouteService = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
     var brouter = new L.Routing.brouter('');
 		
+    // Define the routers and a default one: the first
 		var routers = new Array(openRouteService, brouter);
 		var router = routers[0];
     var plan = new L.Routing.Plan([], {
@@ -780,11 +791,16 @@
         </h3>
       `
 		}).addTo(map);
-
     
     // ------------------------------------------------------------
     // Add a control to change the router
-			
+    var dictRouters = {'OpenRoute Service Walking': routers[0],
+                       'Brouter Walking': routers[1]
+                      }
+    var routingCtrl = new RoutingControl(dictRouters, control);
+    routingCtrl.addTo(map);
+
+    // ------------- NOT USED ANYMORE
 		var toggle = L.easyButton({
 			states: [
 			{
@@ -816,7 +832,8 @@
 			}, 
 		]
 		});
-		toggle.addTo(map);
+		//toggle.addTo(map);
+    // ------------- NOT USED ANYMORE
 
 
     // ------------------------------------------------------------
