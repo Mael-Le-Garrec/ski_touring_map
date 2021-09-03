@@ -14,8 +14,9 @@
 			urlParameters: {}
 		},
 
-		initialize: function (options) {
+		initialize: function (profile, options) {
 			L.Util.setOptions(this, options);
+      this._profile = profile;
 		},
 
 		route: function (waypoints, callback, context, options) {
@@ -219,7 +220,7 @@
 				coordinates.push(new Array(waypoints[i].latLng.lng, waypoints[i].latLng.lat));
 			}
 
-      var profile = 'hiking-beta';
+      var profile = this._profile;
 
       baseUrl = this.options.serviceUrl + "lonlats="
       for (var i = 0; i < coordinates.length; i++)
