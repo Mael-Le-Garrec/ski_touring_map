@@ -164,8 +164,24 @@ var RoutingControl = L.Control.Layers.extend({
       var container = obj.overlay ? this._overlaysList : this._baseLayersList;
       container.appendChild(label);
 
-      //this._checkDisabledLayers();
+      this._checkDisabledLayers();
       return label;
+    },
+
+    //
+    _checkDisabledLayers: function () {
+      var inputs = this._layerControlInputs,
+          input,
+          layer,
+          zoom = this._map.getZoom();
+
+      for (var i = inputs.length - 1; i >= 0; i--) {
+        input = inputs[i];
+        layer = this._getLayer(input.layerId).layer;
+        input.disabled = (layer.options.minZoom !== undefined && zoom < layer.options.minZoom) ||
+                         (layer.options.maxZoom !== undefined && zoom > layer.options.maxZoom);
+
+      }
     },
 
 
