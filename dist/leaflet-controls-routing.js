@@ -14,8 +14,10 @@ var RoutingControl = L.Control.Layers.extend({
       this._handlingClick = false;
       this._routerBase = routerBase;
 
-      for (const [name, router] of Object.entries(routers)){
-        this.addBaseLayer(router, name);
+      for (const [name, values] of Object.entries(routers)){
+        var router = values[0];
+        var image = values[1];
+        this.addBaseLayer(router, name, image);
       }
       
     },
@@ -28,6 +30,18 @@ var RoutingControl = L.Control.Layers.extend({
 
     //
     onRemove: function () {
+    },
+
+
+    // Change icon to reflect the means of transport
+    _updateIcon: function(router) {
+      for (const [name, values] of Object.entries(this._layers)){
+        if (values['layer'] == router)
+        {
+          L.DomUtil.get(this._layersLink).style.setProperty('background-image', "url('dist/img/"+values['image']+"')", 'important');
+          break;
+        }
+      };
     },
     
     //
@@ -56,18 +70,20 @@ var RoutingControl = L.Control.Layers.extend({
       this._routerBase.setRouter(addedRouter);
       this._routerBase.setWaypoints(waypoints);
 
+      this._updateIcon(addedRouter);
+
       this._handlingClick = false;
       this._refocusOnMap();
     },
 
     // 
-    addBaseLayer: function (layer, name) {
-  		this._addLayer(layer, name);
+    addBaseLayer: function (layer, name, image) {
+  		this._addLayer(layer, name, image);
   		return (this._map) ? this._update() : this;
   	},
 
     //
-  	_addLayer: function (layer, name, overlay) {
+  	_addLayer: function (layer, name, image, overlay) {
       if (this._map) {
         //layer.on('add remove', this._onLayerChange, this);
       }
@@ -75,7 +91,8 @@ var RoutingControl = L.Control.Layers.extend({
       this._layers.push({
         layer: layer,
         name: name,
-        overlay: overlay
+        overlay: overlay,
+        image: image
       });
 
       if (this.options.sortLayers) {

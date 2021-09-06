@@ -795,9 +795,9 @@
     
     // ------------------------------------------------------------
     // Add a control to change the router
-    var dictRouters = {'OpenRouteService Walking': routers[0],
-                       'Brouter Walking': routers[1],
-                       'Brouter Cycling': routers[2],
+    var dictRouters = {'OpenRouteService Walking': [routers[0], 'walking_man.png'],
+                       'Brouter Walking': [routers[1], 'walking_man.png'],
+                       'Brouter Cycling': [routers[2], 'bike.png'],
                       }
     var routingCtrl = new RoutingControl(dictRouters, control);
     routingCtrl.addTo(map);
