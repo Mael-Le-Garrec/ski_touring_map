@@ -799,7 +799,7 @@
                        'Brouter Walking': [routers[1], 'walking_man.png'],
                        'Brouter Cycling': [routers[2], 'bike.png'],
                       }
-    var routingCtrl = new RoutingControl(dictRouters, control);
+    var routingCtrl = new RoutingControl(dictRouters, control, routers[0]);
     routingCtrl.addTo(map);
 
     // ------------- NOT USED ANYMORE
@@ -852,6 +852,10 @@
           waypointsUrl.push(array);
           var newUrl = UpdateQueryString('waypoints', encodeURIComponent(JSON.stringify(waypointsUrl)));
           history.pushState({}, null, newUrl);
+        
+          // Update Router as well
+          newUrl = UpdateQueryString('router', encodeURIComponent(JSON.stringify(routingCtrl.getCurrentRouterName())));
+          history.pushState({}, null, newUrl);
         }
       }
     }
@@ -872,11 +876,37 @@
           control.spliceWaypoints(i, 1, new L.latLng(points[i]));
         else
           control.spliceWaypoints(i, 0, new L.latLng(points[i]));
-
     }
     // ------------------------------------------------------------
-      
     
+    var routerUri = JSON.parse(urlParams.get('router'));
+    if (routerUri)
+    {
+      // Check the router given actually exists
+      if (Object.keys(dictRouters).includes(routerUri))
+      {
+        // Get the element and click on it. I don't want to code properly.
+        var div = document.getElementsByClassName("leaflet-control-layers-custom-toggle")[0];
+        div = div.parentNode.getElementsByTagName("section")[0].getElementsByTagName("div")[0];
+        
+        var input;
+        var span;
+        // Look for the element we need
+        for (var i = 0; i < div.children.length; i++)
+        {
+          input = div.children[i].children[0].children[0];
+          span = div.children[i].children[0].children[1].textContent.trim();
+
+          if (span == routerUri)
+          {
+            input.click();
+            break;
+          }
+        }
+      }
+    }
+    
+
 		// ------------------------------------------------------------
 		// Functions to add the current position to the geocoder and start routing
 		function startHere()

@@ -13,6 +13,7 @@ var RoutingControl = L.Control.Layers.extend({
       this._lastZIndex = 0;
       this._handlingClick = false;
       this._routerBase = routerBase;
+      this._current = Object.keys(routers)[0];
 
       for (const [name, values] of Object.entries(routers)){
         var router = values[0];
@@ -20,6 +21,10 @@ var RoutingControl = L.Control.Layers.extend({
         this.addBaseLayer(router, name, image);
       }
       
+    },
+
+    getCurrentRouterName: function() {
+      return this._current;
     },
 
     addTo: function (map) {
@@ -56,9 +61,11 @@ var RoutingControl = L.Control.Layers.extend({
       for (var i = inputs.length - 1; i >= 0; i--) {
         input = inputs[i];
         layer = this._getLayer(input.layerId).layer;
+        var layerComplete = this._getLayer(input.layerId);
 
         if (input.checked) {
           addedLayers.push(layer);
+          this._current = layerComplete['name'];
         } else if (!input.checked) {
           removedLayers.push(layer);
         }
@@ -69,7 +76,6 @@ var RoutingControl = L.Control.Layers.extend({
 
       this._routerBase.setRouter(addedRouter);
       this._routerBase.setWaypoints(waypoints);
-
       this._updateIcon(addedRouter);
 
       this._handlingClick = false;
