@@ -635,6 +635,7 @@
            if ($(this).attr("href").endsWith(".gpx"))
            {
               var gpx = "./dist/gpx/" + $(this).attr("href"); // URL to your GPX file or the GPX itself
+              var fileName = decodeURI($(this).attr("href"));
               var tracks = new L.GPX(gpx, {
                 async: true,
                 marker_options: {
@@ -649,8 +650,9 @@
               }).on('loaded', function(e) {
                 var gpx = e.target
                 
-                var keys = ["Distance", "Total Time", "Start", "End", "Elevation +", "Elevation -", "Max Altitude", "Min Altitude"];
-                var funcs = [(gpx.get_distance() / 1000).toFixed(2) + " km", 
+                var keys = ["File Name", "Distance", "Total Time", "Start", "End", "Elevation +", "Elevation -", "Max Altitude", "Min Altitude"];
+                var funcs = [fileName,
+                             (gpx.get_distance() / 1000).toFixed(2) + " km", 
                              msToTime(gpx.get_total_time()), 
                              gpx.get_start_time().toUTCString(), 
                              gpx.get_end_time().toUTCString(), 
