@@ -179,14 +179,24 @@
     // Highly inclined slopes are dangerous, it's nice to have a map of those
     var slopesStr = 'https://tileserver1.openslopemap.org/OSloOVERLAY_LR_All_16/{z}/{x}/{y}.png';
 
-    function layerUrl(key, layer) {
+    function layerUrl(key, layer, format) {
+        if (format == null)
+            format = "image/jpeg"
+
         return "https://wxs.ign.fr/" + key
             + "/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&"
             + "LAYER=" + layer + "&STYLE=normal&TILEMATRIXSET=PM&"
-            + "TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg";
+            + "TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=" + format;
     }
-
+    
     var ign_tiles_v2 = L.tileLayer(
+        layerUrl(
+            "essentiels", "GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2", "image/png"
+        ),
+        {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>'}
+      );
+
+    var ign_tiles = L.tileLayer(
         layerUrl(
             "gt1694g3zyh9h0k9qujff1v2", "GEOGRAPHICALGRIDSYSTEMS.MAPS"
         ),
@@ -195,7 +205,7 @@
     
     var ign_slopes = L.tileLayer(
         layerUrl(
-            "gt1694g3zyh9h0k9qujff1v2", "GEOGRAPHICALGRIDSYSTEMS.SLOPES.MOUNTAIN"
+            "altimetrie", "GEOGRAPHICALGRIDSYSTEMS.SLOPES.MOUNTAIN", 'image/png'
         ),
         {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>',
          opacity: 0.5,
@@ -288,7 +298,8 @@
         "OutdoorActive Summer": outdoorSummer_tiles,
         "OutdoorActive Winter": outdoorWinter_tiles,
 				"OpenStreetMap": osm_tiles,
-        "IGN": ign_tiles_v2,
+        "IGN": ign_tiles,
+        "IGN v2": ign_tiles_v2,
         "IGN Aviation": ign_aviation,
         "Satellite": googleSat_tiles,
     }
