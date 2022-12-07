@@ -951,7 +951,6 @@
     var el = L.control.elevation({
               position: "bottomleft",
     });
-    el.addTo(map);
 
     function addElevation()
     {
@@ -976,6 +975,8 @@
       var gjl = L.geoJson(geojson,{
 		    onEachFeature: el.addData.bind(el)
       });
+
+      el.addTo(map);
     }
     
     control.addEventListener("routeselected", e => {
