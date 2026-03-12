@@ -869,13 +869,35 @@
       var nom = L.Control.Geocoder.nominatim();
       var _queue = [];
       var _running = false;
+      var _reverseCache = {};
+      var _pendingReverse = {};
+
+      function _reverseKey(location) {
+        return location.lat.toFixed(5) + ',' + location.lng.toFixed(5);
+      }
+
+      function _queueReverseCall(item) {
+        _queue.push(item);
+        _drain();
+      }
 
       function _drain() {
         if (_running || _queue.length === 0) return;
         _running = true;
         var item = _queue.shift();
         nom.reverse(item.location, item.scale, function (results) {
-          item.cb.call(item.context, results);
+          _reverseCache[item.key] = results || [];
+          var waiters = _pendingReverse[item.key] || [];
+          delete _pendingReverse[item.key];
+
+          for (var i = 0; i < waiters.length; i++) {
+            waiters[i].cb.call(waiters[i].context, _reverseCache[item.key]);
+          }
+
+          if (waiters.length === 0) {
+            item.cb.call(item.context, _reverseCache[item.key]);
+          }
+
           // Wait 1 s between requests to stay within Nominatim's usage policy
           setTimeout(function () { _running = false; _drain(); }, 1100);
         }, null);
@@ -885,8 +907,20 @@
         geocode: function (q, cb, ctx) { nom.geocode(q, cb, ctx); },
         suggest: nom.suggest ? function (q, cb, ctx) { nom.suggest(q, cb, ctx); } : undefined,
         reverse: function (location, scale, cb, context) {
-          _queue.push({ location: location, scale: scale, cb: cb, context: context });
-          _drain();
+          var key = _reverseKey(location);
+
+          if (_reverseCache.hasOwnProperty(key)) {
+            cb.call(context, _reverseCache[key]);
+            return;
+          }
+
+          if (_pendingReverse[key]) {
+            _pendingReverse[key].push({ cb: cb, context: context });
+            return;
+          }
+
+          _pendingReverse[key] = [{ cb: cb, context: context }];
+          _queueReverseCall({ key: key, location: location, scale: scale, cb: cb, context: context });
         }
       };
     }());
