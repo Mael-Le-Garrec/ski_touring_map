@@ -73,7 +73,15 @@ Then open: `http://localhost:8000/map.html`
 ## Elevation
 
 - Elevation chart shown for found routes
-- Straight-line router includes elevation sampling and computed elevation metrics
+- Straight-line router includes computed elevation metrics
+- Elevation data is served by the server-side endpoint configured in `map.html`
+
+### Elevation Server
+
+- Production endpoint: `https://elevations.hatrix.fr/v1/elevation`
+- Local self-hosted server lives in `elevation_server/`
+- Setup/download/run instructions are in `elevation_server/README.md`
+- For local testing, update the straight-line router URL in `map.html` to `http://localhost:8765/v1/elevation`
 
 ## Layer Panel UX
 
@@ -118,6 +126,7 @@ OpenSlopeMap, OpenSnowMap, Strava-style tiles
 ├── map.html                     # Main app
 ├── index.html                   # Redirects to map.html
 ├── get_pois.sh                  # Helper to refresh POI JSON from Overpass
+├── elevation_server/            # Server-side elevation API + SRTM download script
 ├── json/                        # Local POI datasets
 ├── images/                      # Marker and UI assets
 └── dist/
@@ -155,6 +164,9 @@ The app scans that directory and adds tracks to the `GPX` overlay.
 ## Configuration Notes
 
 - OpenRouteService key is currently hardcoded in `map.html`.
+- Straight-line elevation backend URL is configured in `map.html`.
+- Elevation server CORS origins are configured in `elevation_server/server.py` (`_DEFAULT_ORIGINS`)
+or via `ELEVATION_ALLOWED_ORIGINS`.
 - If tiles or APIs change, update corresponding URLs in `map.html` and router files.
 
 ## Troubleshooting
@@ -162,9 +174,9 @@ The app scans that directory and adds tracks to the `GPX` overlay.
 - Blank map or missing assets:
 	- Ensure you run via HTTP server, not `file://`.
 - Route/elevation intermittency:
-	- Reload the page and verify network/API availability.
-    - The app should avoid sending too many requests at once. If it still is an issue, wait and
-    retry.
+	- Reload the page and verify the elevations server is reachable if used.
+	- If using local server, verify `uvicorn server:app --host 0.0.0.0 --port 8765` is running.
+	- Confirm CORS origin settings in `elevation_server/server.py` if browser requests are blocked.
 - Missing POIs:
 	- Regenerate JSON with `./get_pois.sh`.
 - Shared link not restoring expected state:
