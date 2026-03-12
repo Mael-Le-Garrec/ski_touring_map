@@ -6,7 +6,7 @@ Available on [https://maps.hatrix.fr/ski_touring/](https://maps.hatrix.fr/ski_to
 Only to be used for checking out the app. I downloaded locally the data for some parts of Europe 
 only.
 
-![Ski Touring Index Map](./images/ski_touring_map_html.png)
+![Ski Touring Index Map](images/ski_touring_map_html.png)
 
 ## Summary
 Interactive Leaflet map for ski touring planning with:
