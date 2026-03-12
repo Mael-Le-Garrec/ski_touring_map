@@ -1,6 +1,6 @@
 # Ski Touring Map
 
-Demo: ![https://maps.hatrix.fr/ski_touring/](https://maps.hatrix.fr/ski_touring/)
+Demo: [https://maps.hatrix.fr/ski_touring/](https://maps.hatrix.fr/ski_touring/)
 
 Interactive Leaflet map for ski touring planning with:
 
