@@ -74,7 +74,13 @@ var RoutingControl = L.Control.Layers.extend({
       var addedRouter = addedLayers[0];
       var waypoints = this._routerBase.getWaypoints();
 
-      this._routerBase.setRouter(addedRouter);
+      if (typeof this._routerBase.setRouter === 'function') {
+        this._routerBase.setRouter(addedRouter);
+      } else {
+        // Compatibility with newer leaflet-routing-machine versions where
+        // setRouter is not part of the public API.
+        this._routerBase._router = addedRouter;
+      }
       this._routerBase.setWaypoints(waypoints);
       this._updateIcon(addedRouter);
 
@@ -201,8 +207,9 @@ var RoutingControl = L.Control.Layers.extend({
       for (var i = inputs.length - 1; i >= 0; i--) {
         input = inputs[i];
         layer = this._getLayer(input.layerId).layer;
-        input.disabled = (layer.options.minZoom !== undefined && zoom < layer.options.minZoom) ||
-                         (layer.options.maxZoom !== undefined && zoom > layer.options.maxZoom);
+        input.disabled = layer.options && (
+                         (layer.options.minZoom !== undefined && zoom < layer.options.minZoom) ||
+                         (layer.options.maxZoom !== undefined && zoom > layer.options.maxZoom));
 
       }
     },

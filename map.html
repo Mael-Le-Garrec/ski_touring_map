@@ -1,63 +1,89 @@
 <html>
+
 <head>
   <meta charset="utf-8" />
   <title>Ski Touring Planning Map</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.10.3/math.min.js"></script>
+  <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
 
+  <!-- ============================================================
+       LEAFLET CORE
+       ============================================================ -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+
+  <!-- ============================================================
+       ROUTING — leaflet-routing-machine + custom backends
+       ============================================================ -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+  <script src="./dist/L.Routing.OpenRouteService.js"></script>
+  <script src="./dist/L.Routing.Brouter.js"></script>
+  <script src="./dist/L.Routing.StraightLine.js"></script>
+  <script src="./dist/polyline.js"></script>
+  <script src="./dist/leaflet-controls-routing.js"></script>
+  <link rel="stylesheet" href="./dist/leaflet-controls-routing.css" />
+
+  <!-- ============================================================
+       GEOCODING
+       ============================================================ -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+  <!-- ============================================================
+       POINTS OF INTEREST — marker clustering + search + OSM data
+       ============================================================ -->
   <link rel="stylesheet" href="./dist/MarkerCluster.css" />
   <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="./dist/leaflet-search.css" />
+  <script src="./dist/leaflet.markercluster-src.js"></script>
+  <script src="./dist/leaflet-search.js"></script>
+  <script src="https://unpkg.com/osmtogeojson@2.2.12/osmtogeojson.js"></script>
 
-	<!-- For Geocoding -->
-	<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-	<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
-	<!-- For GPX displaying -->
+  <!-- ============================================================
+       GPX TRACKS
+       ============================================================ -->
   <script src="./dist/gpx.min.js"></script>
 
-  <!-- For Routing -->
-  <link rel="stylesheet" href="./dist/leaflet-routing-machine.css" />
-  <script src="./dist/leaflet-routing-machine.js"></script>
-  <script src="./dist/L.Routing.OpenRouteService.js"></script>
-  <script src="./dist/L.Routing.Brouter.js"></script>
-  <script src="./dist/polyline.js"></script>
-  <script src="./dist/leaflet-controls-routing.js"></script> <!-- for the dropdown menu -->
-  <link rel="stylesheet" href="./dist/leaflet-controls-routing.css"> <!-- for the dropdown menu -->
-
-	<!-- Right Click Menu -->
-  <link rel="stylesheet" href="./dist/menu.css" />
-  <script src="./dist/menu.js"></script>
-
-  <!-- For Elevation graph -->
+  <!-- ============================================================
+       ELEVATION GRAPH
+       ============================================================ -->
   <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
   <link rel="stylesheet" href="./dist/leaflet.elevation-0.0.4-d3v4.css" />
   <script src="./dist/leaflet.elevation-0.0.4-d3v4.src.js"></script>
 
-  <!-- For control buttons -->
+  <!-- ============================================================
+       MISC UTILITIES
+       ============================================================ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.10.3/math.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="./dist/querystring.js"></script>
+
+  <!-- Right-click context menu -->
+  <link rel="stylesheet" href="./dist/menu.css" />
+  <script src="./dist/menu.js"></script>
+
+  <!-- Control buttons -->
   <link rel="stylesheet" href="./dist/easy-button.css" />
   <script src="./dist/easy-button.js"></script>
 
+  <!-- Bootstrap icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css">
 
-	<!-- Bootstrap icons -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css">
-  
-  <script src="./dist/leaflet.markercluster-src.js"></script>
-  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-  <script src="https://unpkg.com/osmtogeojson@2.2.12/osmtogeojson.js"></script>
-  <script src="./dist/querystring.js"></script>
-  <script src="./dist/leaflet-search.js"></script>
-
-  <meta charset=utf-8>
-
+  <!-- ============================================================
+       STYLES
+       ============================================================ -->
   <style>
-    #map { 
+    body {
+      margin: 0px;
+    }
+
+    #map {
       width: 100%;
       height: 100%;
       position: absolute;
     }
 
+    /* Loading overlay shown while POIs are being fetched */
     #wait {
       margin-left: 25%;
       margin-top: 15%;
@@ -69,736 +95,811 @@
       z-index: 100000;
       position: absolute;
     }
+
+    /* Slope legend image, shown only when the Open Slopes layer is active */
     #legend-slope {
-      display: block;
+      display: none;
       z-index: 100000;
       position: absolute;
       bottom: 5;
       right: 5;
-
       pointer-events: none;
       opacity: .85;
       height: 200px;
     }
 
-    .elevation{
+    .elevation {
       z-index: 10000;
       pointer-events: all;
     }
-    .leaflet-top, .leaflet-bottom {
+
+    .leaflet-top,
+    .leaflet-bottom {
       pointer-events: all;
     }
 
-    .leaflet-touch .leaflet-control-layers-toggle{
+    .leaflet-touch .leaflet-control-layers-toggle {
       width: 30px;
       height: 30px;
-    }
-
-    body{
-      margin: 0px;
     }
   </style>
 </head>
 
 <body>
-	<!-- Right Click Menu -->
-	<div id="menu">
-		<a href="#" onclick="startHere(); return false;">
-			Start Here<span></span>
-		</a>
-		<a href="#" onclick="endHere(); return false;">
-			End here<span></span>
-		</a>
-		<hr>
-		<a href="#" onclick="createMarkerUrl(); return false;">
-			Create Marker <span></span>
-		</a>
-		<a href="#" onclick="copyLocation(); return false;">
-			Copy Location <span></span>
-		</a>
-		<hr>
-		<a href="#">
-			Close
-		</a>
-			<!-- <img src="./images/pin-icon-start.png" />Copy Location <span>Ctrl + ?!</span> -->
-	</div>
 
+  <!-- ============================================================
+       RIGHT-CLICK CONTEXT MENU
+       ============================================================ -->
+  <div id="menu">
+    <a href="#" onclick="startHere(); return false;">Start Here<span></span></a>
+    <a href="#" onclick="endHere(); return false;">End here<span></span></a>
+    <hr>
+    <a href="#" onclick="createMarkerUrl(); return false;">Create Marker <span></span></a>
+    <a href="#" onclick="copyLocation(); return false;">Copy Location <span></span></a>
+    <hr>
+    <a href="#">Close</a>
+  </div>
 
-  <!-- Fork me on github -->
-  <a href="https://github.com/Mael-Le-Garrec/ski_touring_map"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:1000;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+  <!-- Fork me on GitHub ribbon (top-left) -->
+  <a href="https://github.com/Mael-Le-Garrec/ski_touring_map">
+    <img style="position: absolute; top: 0; left: 0; border: 0; z-index:1000;"
+      src="https://github.blog/wp-content/uploads/2008/12/forkme_left_darkblue_121621.png"
+      alt="Fork me on GitHub">
+  </a>
+
   <div id="map"></div>
 
-  <!-- Slope legend overlay -->
-  <img src="https://download.openslopemap.org/LegendeOpenSlopeMap.png" id="legend-slope">
+  <!-- Slope legend — visibility controlled by JS when Open Slopes overlay is toggled -->
+  <img src="images/LegendeOpenSlopeMap.png" id="legend-slope">
 
-  <!-- Let's put an overlay on top of the map to tell the user to wait for the huts to load -->
+  <!-- Loading overlay shown while POIs are fetched -->
   <div id="wait">
     <center style="margin-top: 20%;">
       <h2>Loading Points of Interest</h2>
       <img src="dist/img/loading.gif">
-
-      <p>Points of Interest to be loaded:<br> tourism=hut, tourism=wilderness_hut, tourism=viewpoint</p>
+      <p>Points of Interest to be loaded:<br>tourism=hut, tourism=wilderness_hut, tourism=viewpoint</p>
     </center>
   </div>
 
   <script type="text/javascript">
 
-		// helper function to get a time in hours / min / sec instead of millisecs
-		function msToTime(duration) {
-			var milliseconds = parseInt((duration % 1000) / 100),
-				seconds = Math.floor((duration / 1000) % 60),
-				minutes = Math.floor((duration / (1000 * 60)) % 60),
-				hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+    // ============================================================
+    // UTILITY FUNCTIONS
+    // ============================================================
 
-			hours = (hours < 10) ? "0" + hours : hours;
-			minutes = (minutes < 10) ? "0" + minutes : minutes;
-			seconds = (seconds < 10) ? "0" + seconds : seconds;
+    // Convert milliseconds to a human-readable "HHh MMm SS.ms" string
+    function msToTime(duration) {
+      var milliseconds = parseInt((duration % 1000) / 100),
+        seconds = Math.floor((duration / 1000) % 60),
+        minutes = Math.floor((duration / (1000 * 60)) % 60),
+        hours   = Math.floor((duration / (1000 * 60 * 60)) % 24);
 
-			return hours + "h " + minutes + "m " + seconds + "." + milliseconds + "s";
-		}
+      hours   = (hours   < 10) ? "0" + hours   : hours;
+      minutes = (minutes < 10) ? "0" + minutes : minutes;
+      seconds = (seconds < 10) ? "0" + seconds : seconds;
 
-		// -------------------------------------------------------------
- 	  // Add a function to get into the clipboard the current location
-    function copyLocation(e)
-    {
-			var pos = cursorLat + " " + cursorLng;
-			navigator.clipboard.writeText(pos).then(function() {}, function() {});
-		}
+      return hours + "h " + minutes + "m " + seconds + "." + milliseconds + "s";
+    }
 
-		// -------------------------------------------------------------
+    // Copy current cursor coordinates to the clipboard
+    function copyLocation() {
+      var pos = cursorLat + " " + cursorLng;
+      navigator.clipboard.writeText(pos).then(function () {}, function () {});
+    }
 
-    // Define our base tiles: we'll be using the OSM winter map
+    function getJsonUrlParam(name, fallback) {
+      var rawValue = urlParams.get(name);
+      if (!rawValue) return fallback;
+
+      try {
+        return JSON.parse(rawValue);
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function pushQueryParam(name, value) {
+      history.pushState({}, null, UpdateQueryString(name, value));
+    }
+
+    function replaceQueryParam(name, value) {
+      history.replaceState({}, null, UpdateQueryString(name, value));
+    }
+
+    function pushJsonQueryParam(name, value) {
+      pushQueryParam(name, value === null ? null : encodeURIComponent(JSON.stringify(value)));
+    }
+
+    function replaceJsonQueryParam(name, value) {
+      replaceQueryParam(name, value === null ? null : encodeURIComponent(JSON.stringify(value)));
+    }
+
+
+    // ============================================================
+    // TILE LAYER DEFINITIONS
+    // ============================================================
+
+    // --- URL strings ---
     var outdoorWinterStr = 'https://w3.outdooractive.com/map/v1/png/osm_winter/{z}/{x}/{y}/t.png?project=api-dev-oa';
     var outdoorSummerStr = 'https://w3.outdooractive.com/map/v1/png/osm/{z}/{x}/{y}/t.png?project=api-dev-oa';
-    var opentopoStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
+    var opentopoStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png';
+    var pistesStr   = 'http://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png';
+    var slopesStr   = 'https://tileserver1.openslopemap.org/OSloOVERLAY_LR_All_16/{z}/{x}/{y}.png';
+    var stravaStr   = 'https://atlas.hartakji.com/strava-backcountry-ski/{z}/{x}/{y}.png';
 
-    // It's useful to have the pistes to know where it's easy to ride
-    // We'll take them from opensnowmap
-    var pistesStr = 'http://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png';
-
-    // Highly inclined slopes are dangerous, it's nice to have a map of those
-    var slopesStr = 'https://tileserver1.openslopemap.org/OSloOVERLAY_LR_All_16/{z}/{x}/{y}.png';
-
-    function layerUrl(key, layer, format) {
-        if (format == null)
-            format = "image/jpeg"
-
-        return "https://wxs.ign.fr/" + key
-            + "/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&"
-            + "LAYER=" + layer + "&STYLE=normal&TILEMATRIXSET=PM&"
-            + "TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=" + format;
+    // Builds a standard IGN WMTS URL for data.geopf.fr (PNG, TileMatrixSet PM)
+    function layerUrlPublic(layer) {
+      return "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&"
+        + "LAYER=" + layer + "&STYLE=normal&TILEMATRIXSET=PM&"
+        + "TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png";
     }
-    
-    var ign_tiles_v2 = L.tileLayer(
-        layerUrl(
-            "essentiels", "GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2", "image/png"
-        ),
-        {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>'}
-      );
 
-    var ign_tiles = L.tileLayer(
-        layerUrl(
-            "gt1694g3zyh9h0k9qujff1v2", "GEOGRAPHICALGRIDSYSTEMS.MAPS"
-        ),
-        {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>'}
-      );
-    
-    var ign_slopes = L.tileLayer(
-        layerUrl(
-            "altimetrie", "GEOGRAPHICALGRIDSYSTEMS.SLOPES.MOUNTAIN", 'image/png'
-        ),
-        {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>',
-         opacity: 0.5,
-        }
-    );
-    
-    var ign_aviation = L.tileLayer(
-        layerUrl(
-            "gt1694g3zyh9h0k9qujff1v2", "GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-OACI"
-        ),
-        {attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>',
-         opacity: 0.5,
-         maxZoom: 11,
-          minZoom: 6,
-        }
-    );
+    // --- Base layers ---
+    var opentopo_tiles = L.tileLayer(opentopoStr, {
+      maxZoom: 17, minZoom: 2, opacity: 0.7,
+    });
 
-    // Background tiles for outdoor active
-    var outdoorSummer_tiles = L.tileLayer(outdoorSummerStr,
-        {
-          type: 'map',
-          maxZoom: 17,
-          minZoom: 2,
-          opacity: 0.7,
-        });
-    var outdoorWinter_tiles = L.tileLayer(outdoorWinterStr,
-        {
-          type: 'map',
-          maxZoom: 17,
-          minZoom: 2,
-          opacity: 0.7,
-        });
+    var outdoorSummer_tiles = L.tileLayer(outdoorSummerStr, {
+      maxZoom: 17, minZoom: 2, opacity: 0.7,
+    });
+
+    var outdoorWinter_tiles = L.tileLayer(outdoorWinterStr, {
+      maxZoom: 17, minZoom: 2, opacity: 0.7,
+    });
+
+    var osm_tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    });
+
+    var googleSat_tiles = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    });
+
+    // IGN v2 — general purpose topo map (data.geopf.fr)
+    var ign_tiles_v2 = L.tileLayer(layerUrlPublic("GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2"), {
+      attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>',
+    });
+   
+    // --- Overlay layers ---
+    var ign_slopes = L.tileLayer(layerUrlPublic("GEOGRAPHICALGRIDSYSTEMS.SLOPES.MOUNTAIN"), {
+      attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>',
+      opacity: 0.5,
+    });
+
+    var slopes_tiles = L.tileLayer(slopesStr, {
+      maxZoom: 16, 
+      minZoom: 2,
+      opacity: 0.25,
+    });
     
-    // Background tiles for OpenTopoMap
-    var opentopo_tiles = L.tileLayer(opentopoStr,
-        {
-          type: 'map',
-          maxZoom: 17,
-          minZoom: 2,
-          opacity: 0.7,
-        });
+    // IGN Trace hivernale
+    var ign_hivernal = L.tileLayer(layerUrlPublic("TRACES.RANDO.HIVERNALE"), {
+      attribution: '&copy; <a href="http://www.ign.fr/">IGN</a>',
+      opacity: 0.5,
+    });
 
-    // Background tiles for 4uMaps, good for hiking
-    var foruMapsStr = "https://tileserver.4umaps.com/{z}/{x}/{y}.png"
-    var foruMaps_tiles = L.tileLayer(foruMapsStr,
-        {
-          type: 'map',
-          maxZoom: 17,
-          minZoom: 2,
-          opacity: 0.7,
-        });
+    var pistes_tiles = L.tileLayer(pistesStr, {
+      maxZoom: 18, minZoom: 2, opacity: 1,
+    });
 
-    // Google Satelite maps
-    var googleStr = 'http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
-    googleSat_tiles = L.tileLayer(googleStr,
-        {
-          maxZoom: 20,
-          subdomains:['mt0','mt1','mt2','mt3']
-        });
+    var strava_tiles = L.tileLayer(stravaStr, {
+      maxZoom: 15, minZoom: 2, opacity: 0.5,
+    });
 
-    // Regular OSM
-		var osmStr = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-		var osm_tiles = L.tileLayer(osmStr, {
-				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-		});
-    
-    // Steepeness
-    var slopes_tiles = L.tileLayer(slopesStr,
-        {
-          type: 'map',
-          maxZoom: 16,
-          minZoom: 2,
-          opacity: 0.25,
-        });
-    
-    // Pistes
-    var pistes_tiles = L.tileLayer(pistesStr,
-        {
-          type: 'map',
-          maxZoom: 18,
-          minZoom: 11,
-          opacity: 1,
-        });
-
-    // Add all those tiles to a dict we'll use later to be able to switch on
-    // and off the layers
+    // --- Layer dictionaries (POI overlays are added later, after they load) ---
     var baseMaps = {
-        "OpenTopoMap": opentopo_tiles,
-        "4uMaps": foruMaps_tiles,
-        "OutdoorActive Summer": outdoorSummer_tiles,
-        "OutdoorActive Winter": outdoorWinter_tiles,
-				"OpenStreetMap": osm_tiles,
-        "IGN": ign_tiles,
-        "IGN v2": ign_tiles_v2,
-        "IGN Aviation": ign_aviation,
-        "Satellite": googleSat_tiles,
-    }
-    var overlayMaps = {
-      "Slopes": slopes_tiles,
-      "IGN Slopes": ign_slopes,
-      "Ski Pistes": pistes_tiles,
-    }
-    // Create an array for the default overlays to show
-    var defaultOverlays = ["Slopes", "Ski Pistes"];
+      "OpenTopoMap":            opentopo_tiles,
+      "OutdoorActive Summer":   outdoorSummer_tiles,
+      "OutdoorActive Winter":   outdoorWinter_tiles,
+      "OpenStreetMap":          osm_tiles,
+      "IGN v2":                 ign_tiles_v2,
+      "Satellite":              googleSat_tiles,
+    };
+
+    var overlayTileMaps = {
+      "IGN Slopes":             ign_slopes,
+      "IGN Trace Hivernale":    ign_hivernal,
+      "Open Slopes":            slopes_tiles,
+      "Ski Pistes":             pistes_tiles,
+      "Strava Ski Heatmap":     strava_tiles,
+    };
+
+    var overlayPoiMaps = {};
+
+    // Overlays shown by default on a clean URL (empty = none)
+    var defaultOverlays = [];
     var defaultOverlaysTiles = [];
-    for (const [key, value] of Object.entries(overlayMaps)) {
+    for (const [key, value] of Object.entries(overlayTileMaps)) {
       if (defaultOverlays.includes(key))
         defaultOverlaysTiles.push(value);
     }
 
-    // ------------------------------------------------------------
-    // Finally, the map object with our base tiles and the different layers
-    // Get the location in the URL if any 
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    var lng = urlParams.get('lng');
-    var lat = urlParams.get('lat');
-    var zoom = urlParams.get('z');
 
-    if (lat && lng)
-      var center = [lat, lng];
-    
+    // ============================================================
+    // MAP INITIALISATION
+    // ============================================================
+
+    const queryString = window.location.search;
+    const urlParams   = new URLSearchParams(queryString);
+
+    var lat  = urlParams.get('lat');
+    var lng  = urlParams.get('lng');
+    var zoom = urlParams.get('z');
+    var center = (lat && lng) ? [lat, lng] : null;
+
     var map = L.map('map', {
-        center: (center) ? center : L.latLng(46, 5.2),
-        zoom: (zoom) ? zoom : 6, 
-        layers: [opentopo_tiles].concat(defaultOverlaysTiles),
+      center: center ? center : L.latLng(46, 5.2),
+      zoom:   zoom   ? zoom   : 6,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 120,
+      layers: [opentopo_tiles].concat(defaultOverlaysTiles),
     });
 
-    // Add an event handler to change the querystring when the basemap is changed
-    map.on('baselayerchange', onBaseAdd);
-    function onBaseAdd(e){
-       var overlayName = e['name'];
-       var newUrl = UpdateQueryString('basemap', overlayName);
-       history.pushState({}, null, newUrl);
-    }
 
-    var activeLayers = []; // populated after Huts definition
-    // Add event handlers when the overlays are ticked or unticked
-    map.on('overlayadd', onOverlayAdd);
-    function onOverlayAdd(e){
-      // Add the overlay to our list keeping track of them
-      if (activeLayers.includes(e['name']))
-        return;
+    // ============================================================
+    // URL STATE SYNC
+    // ============================================================
 
-      activeLayers.push(e['name']);
+    // Keep position/zoom in URL on every pan or zoom
+    map.on('moveend', function () {
+      var c = map.getCenter();
+      pushQueryParam('z', map.getZoom());
+      pushQueryParam('lat', c.lat);
+      pushQueryParam('lng', c.lng);
+    });
 
-      // Update the URI
-      var overlayNames = activeLayers;
-      var params = encodeURIComponent(JSON.stringify(overlayNames));
-      var newUrl = UpdateQueryString('overlays', params);
-      history.pushState({}, null, newUrl);
-    }
-    
-    // Add event handlers when the overlays are ticked or unticked
-    map.on('overlayremove', onOverlayRemove);
-    function onOverlayRemove(e){
-      // Add the overlay to our list keeping track of them
-      activeLayers.splice(activeLayers.indexOf(e['name']), 1);
+    // Keep base layer name in URL
+    map.on('baselayerchange', function (e) {
+      pushQueryParam('basemap', e.name);
+    });
 
-      // Update the URI
-      var overlayNames = activeLayers;
-      var params = encodeURIComponent(JSON.stringify(overlayNames));
-      var newUrl = UpdateQueryString('overlays', params);
-      history.pushState({}, null, newUrl);
-    }
-    // ------------------------------------------------------------
-    
-    // ------------------------------------------------------------
-    // Whenever the map moves, update the URL
-    map.on('moveend', function (){
-        var mapCenter = map.getCenter();
-        var mapZoom = map.getZoom();
+    // Keep active overlays list in URL + show/hide slope legend
+    var activeLayers = [];
 
-        var newUrl = UpdateQueryString('z', mapZoom);
-        history.pushState({}, null, newUrl);
+    map.on('overlayadd', function (e) {
+      if (activeLayers.includes(e.name)) return;
+      activeLayers.push(e.name);
 
-        var newUrl = UpdateQueryString('lat', mapCenter.lat);
-        history.pushState({}, null, newUrl);
+      if (e.name === 'Open Slopes')
+        document.getElementById('legend-slope').style.display = 'block';
 
-        var newUrl = UpdateQueryString('lng', mapCenter.lng);
-        history.pushState({}, null, newUrl);
+      pushJsonQueryParam('overlays', activeLayers);
+    });
+
+    map.on('overlayremove', function (e) {
+      activeLayers.splice(activeLayers.indexOf(e.name), 1);
+
+      if (e.name === 'Open Slopes')
+        document.getElementById('legend-slope').style.display = 'none';
+
+      // Remove this layer's opacity from the URL when it is deselected
+      if (overlayOpacityMap.hasOwnProperty(e.name)) {
+        delete overlayOpacityMap[e.name];
+        var encoded = Object.keys(overlayOpacityMap).length > 0
+          ? overlayOpacityMap
+          : null;
+        replaceJsonQueryParam('opacity', encoded);
       }
-    );
-    // ------------------------------------------------------------
-    
-    // ------------------------------------------------------------
-		// Store the position of the cursor
-    var cursorLat;
-    var cursorLng;
-		var cursorLatLng;
-		const Coordinates = L.Control.extend({
-    onAdd: map => {
-      const container = L.DomUtil.create("div");
-      map.addEventListener("mousemove", e => {
-					cursorLat = e.latlng.lat;
-					cursorLng = e.latlng.lng;
-					cursorLatLng = e.latlng;
-			 });
-			 return container;
-			 }
-		});
-		map.addControl(new Coordinates({position: "bottomleft" }));
-    // ------------------------------------------------------------
-    
+
+      pushJsonQueryParam('overlays', activeLayers);
+    });
+
+
+    // ============================================================
+    // CURSOR POSITION TRACKER
+    // ============================================================
+
+    var cursorLat, cursorLng, cursorLatLng;
+
+    const Coordinates = L.Control.extend({
+      onAdd: function (map) {
+        const container = L.DomUtil.create("div");
+        map.addEventListener("mousemove", function (e) {
+          cursorLat    = e.latlng.lat;
+          cursorLng    = e.latlng.lng;
+          cursorLatLng = e.latlng;
+        });
+        return container;
+      }
+    });
+    map.addControl(new Coordinates({ position: "bottomleft" }));
+
+
+    // ============================================================
+    // USER MARKERS (placed via right-click, persisted in URL)
+    // ============================================================
+
     var orangeIcon = L.icon({
       iconUrl: 'images/marker-icon-orange.png',
-      iconAnchor: [12, 40],
-      popupAnchor: [3, -45]
+      iconSize: [16, 26],
+      iconAnchor: [8, 26],
+      popupAnchor: [1, -22],
     });
 
-    // ------------------------------------------------------------
-    // Check if we got a market in the URL for pointing stuff out
-    var listMarkers = new Array();
-    function createMarkerUrl(position, popup, notAddToUri)
-    {
-        // if the position isn't supplied, assume it's the cursor 
+    var listMarkers = [];
+    var currentOpenMarker;
+
+    function createMarkerUrl(position, popup, notAddToUri) {
       if (!position)
         position = [cursorLat, cursorLng];
 
-      var markerObj = new L.marker(position, {icon: orangeIcon}).addTo(map);
+      var markerObj = new L.marker(position, { icon: orangeIcon }).addTo(map);
 
-      // Add a popup
-      //if (!popup || popup == "")
-      //  popup = "Marker created by user";
-      var popupFinal = '<a href="#" onClick="removeOpenMarker()">Remove marker</a><br>' 
-      if (popup)
-        popupFinal += popup;
-
+      var popupFinal = '<a href="#" onClick="removeOpenMarker()">Remove marker</a><br>';
+      if (popup) popupFinal += popup;
       markerObj.bindPopup(popupFinal);
 
-      // Update the URI
-      if (popup)
-        var marker = new Array(position[0], position[1], popup);
-      else
-        var marker = new Array(position[0], position[1]);
-      
-      var markersUrl = JSON.parse(urlParams.get('markers'));
-      if (!markersUrl)
-        markersUrl = new Array();
+      var marker = popup
+        ? [position[0], position[1], popup]
+        : [position[0], position[1]];
 
       listMarkers.push(marker);
-      if (!notAddToUri)
-      {
-        markersUrl.push(marker);
-        var strMarkers = encodeURI(JSON.stringify(markersUrl));
-        var newUrl = UpdateQueryString('markers', strMarkers);
-        history.pushState({}, null, newUrl);
+
+      if (!notAddToUri) {
+        pushJsonQueryParam('markers', listMarkers);
       }
     }
 
-    // Get the data from the URI
-    var markersUrl = JSON.parse(urlParams.get('markers'));
-    if (markersUrl)
-    {
-      for (var markerPoint of markersUrl)
-      {
-        var markerPos = markerPoint.slice(0, 2);
-        var markerPopup = markerPoint.slice(2)[0];
-        createMarkerUrl(markerPos, markerPopup, true);
+    // Restore markers from URL on page load
+    var markersUrl = getJsonUrlParam('markers', null);
+    if (markersUrl) {
+      for (var markerPoint of markersUrl) {
+        createMarkerUrl(markerPoint.slice(0, 2), markerPoint.slice(2)[0], true);
       }
     }
 
-    // Add a callback to store the current open marker
-    var currentOpenMarker;
-    map.on('popupopen', function(e) {
-        currentOpenMarker = e.popup._source;
+    map.on('popupopen', function (e) {
+      currentOpenMarker = e.popup._source;
     });
 
-    // function to remove marker
-    function removeOpenMarker()
-    {
-      // remove the marker from the URI
-      var markersUrl = JSON.parse(urlParams.get('markers'));
-      var index = null; // Index to remove
-      var found = false;
-      var i;
-      for (i = 0; i < listMarkers.length; i++)
-      {
-        var markerPoint = listMarkers[i];
-        var lat = currentOpenMarker.getLatLng().lat;
-        var lng = currentOpenMarker.getLatLng().lng;
-
-        if (markerPoint[0] == lat && markerPoint[1] == lng)
-        {
-          index = i;
-          found = true;
+    function removeOpenMarker() {
+      for (var i = 0; i < listMarkers.length; i++) {
+        var mp = listMarkers[i];
+        if (mp[0] === currentOpenMarker.getLatLng().lat &&
+            mp[1] === currentOpenMarker.getLatLng().lng) {
+          listMarkers.splice(i, 1);
           break;
         }
       }
-      if (found)
-        listMarkers.splice(i, 1);
 
-      // Update the map
-      var strMarkers = encodeURI(JSON.stringify(listMarkers));
-      var newUrl;
-      if (listMarkers.length != 0)
-        newUrl = UpdateQueryString('markers', strMarkers);
-      else
-        newUrl = UpdateQueryString('markers', null);
-      history.pushState({}, null, newUrl);
-      
-      // and from the map
+      pushJsonQueryParam('markers', listMarkers.length > 0 ? listMarkers : null);
+
       map.removeLayer(currentOpenMarker);
-      currentOpenMarker = null;     
+      currentOpenMarker = null;
     }
-    // ------------------------------------------------------------
 
-    // ------------------------------------------------------------
-    // Define the function that queries certain POIs and displays them
-    function get_poi(poi, iconPOI, show, maxPoi, layer)
-    {
+
+    // ============================================================
+    // POINTS OF INTEREST (huts, viewpoints, paragliding)
+    // ============================================================
+
+    function get_poi(poi, iconPOI, maxPoi, layer) {
       $.getJSON(poi, function (osmDataAsJson) {
         var resultAsGeojson = osmtogeojson(osmDataAsJson);
-        var resultLayer = L.geoJson(resultAsGeojson, {
-          style: function (feature) {
-            return {color: "#ff0000"};
-          },
+        L.geoJson(resultAsGeojson, {
+          style: function () { return { color: "#ff0000" }; },
           pointToLayer: function (feature, latlng) {
-            var name = feature.properties.tags.name;
-            name = (name) ? name : null;
-
-            return L.marker(latlng, {icon: iconPOI, title: feature.properties.tags.name});
+            return L.marker(latlng, { icon: iconPOI, title: feature.properties.tags.name });
           },
-          filter: function (feature, layer) {
-            var isPolygon = (feature.geometry) && (feature.geometry.type !== undefined) && (feature.geometry.type === "Polygon");
-            if (isPolygon) {
+          filter: function (feature) {
+            if (feature.geometry && feature.geometry.type === "Polygon") {
               feature.geometry.type = "Point";
-              var polygonCenter = L.latLngBounds(feature.geometry.coordinates[0]).getCenter();
-              feature.geometry.coordinates = [ polygonCenter.lat, polygonCenter.lng ];
+              var c = L.latLngBounds(feature.geometry.coordinates[0]).getCenter();
+              feature.geometry.coordinates = [c.lat, c.lng];
             }
             return true;
           },
           onEachFeature: function (feature, layer) {
-            var popupContent = "";
-            popupContent = popupContent + "<dt>@id</dt><dd>" + feature.properties.type + "/" + feature.properties.id + "</dd>";
-            var keys = Object.keys(feature.properties.tags);
-            keys.forEach(function (key) {
-              poiKeys.add(key);
-              popupContent = popupContent + "<dt>" + key + "</dt><dd>" + feature.properties.tags[key] + "</dd>";
+            var popupContent = "<dt>@id</dt><dd>" + feature.properties.type + "/" + feature.properties.id + "</dd>";
+            Object.keys(feature.properties.tags).forEach(function (key) {
+              popupContent += "<dt>" + key + "</dt><dd>" + feature.properties.tags[key] + "</dd>";
             });
-            popupContent = popupContent + "</dl>"
+            popupContent += "</dl>";
             layer.bindPopup(popupContent);
           }
-        })
-        // Add our markers to the map and the layer group
-        resultLayer.addTo(layer);
+        }).addTo(layer);
 
-        // Disable the waiting div after the two loaded JSON
-        var counter = parseInt(document.getElementById("wait").getAttribute('counter'));
-        if (!counter)
-          counter = 0;
-
-        if (counter == (maxPoi - 1))
-          document.getElementById("wait").remove();
+        // Dismiss the loading overlay once all POI files have loaded
+        var waitEl = document.getElementById("wait");
+        if (!waitEl) return;
+        var counter = parseInt(waitEl.getAttribute('counter')) || 0;
+        if (counter === maxPoi - 1)
+          waitEl.remove();
         else
-        {
-          document.getElementById("wait").setAttribute("counter", counter + 1);
-        }
+          waitEl.setAttribute("counter", counter + 1);
       });
     }
 
-    // Define icons for out huts
-    var viewpointIcon = L.icon({
-      iconUrl: 'images/viewpoint.png',
-      iconSize: [25, 25],
-      iconAnchor: [16, 25],
-      popupAnchor: [0, -28]
-    });
-    var paraglidingIcon = L.icon({
-      iconUrl: 'images/paraglider.png',
-      iconSize: [25, 25],
-      iconAnchor: [16, 25],
-      popupAnchor: [0, -28]
-    });
-    var houseIcon = L.icon({
-      iconUrl: 'images/house.png',
-      iconSize: [25, 25],
-      iconAnchor: [16, 25],
-      popupAnchor: [0, -28]
-    });
-    var hutIcon = L.icon({
-      iconUrl: 'images/hut.png',
-      iconSize: [25, 25],
-      iconAnchor: [16, 25],
-      popupAnchor: [0, -28]
-    });
-    var peakIcon = L.icon({
-      iconUrl: 'images/peak.png',
-      iconSize: [25, 25],
-      iconAnchor: [16, 25],
-      popupAnchor: [0, -28]
-    });
-		// Define some for the GPX tracks and routing
-    var startIcon = L.icon({
-      iconUrl: 'images/pin-icon-start.png',
-      iconAnchor: [10, 25],
-      popupAnchor: [0, -28]
-    });
-    var endIcon = L.icon({
-      iconUrl: 'images/pin-icon-end.png',
-      iconAnchor: [10, 25],
-      popupAnchor: [0, -28]
-    });
+    // --- POI icons ---
+    var viewpointIcon   = L.icon({ iconUrl: 'images/viewpoint.png',  iconSize: [25,25], iconAnchor: [16,25], popupAnchor: [0,-28] });
+    var paraglidingIcon = L.icon({ iconUrl: 'images/paraglider.png', iconSize: [25,25], iconAnchor: [16,25], popupAnchor: [0,-28] });
+    var houseIcon       = L.icon({ iconUrl: 'images/house.png',      iconSize: [25,25], iconAnchor: [16,25], popupAnchor: [0,-28] });
+    var hutIcon         = L.icon({ iconUrl: 'images/hut.png',        iconSize: [25,25], iconAnchor: [16,25], popupAnchor: [0,-28] });
 
-    // ------------------------------------------------------------
-    // Define a layer group for the search function
-    var poiLayers = L.layerGroup();
-    var viewpointLayer = L.layerGroup();
+    // --- Route marker icons (big start/end, compact vias) ---
+    var startIcon = L.icon({ iconUrl: 'images/pin-icon-start.png', iconAnchor: [10,25], popupAnchor: [0,-28] });
+    var endIcon   = L.icon({ iconUrl: 'images/pin-icon-end.png',   iconAnchor: [10,25], popupAnchor: [0,-28] });
+    var viaIcon   = new L.Icon.Default({ iconSize: [16,26], iconAnchor: [8,26], popupAnchor: [1,-22] });
+    var significantViaIcon = L.icon({ iconUrl: 'images/marker-icon-orange.png', iconSize: [25,41], iconAnchor: [12,41], popupAnchor: [1,-34] });
+
+    // --- Layer groups ---
+    var poiLayers        = L.layerGroup();
+    var viewpointLayer   = L.layerGroup();
     var paraglidingLayer = L.layerGroup();
-    var poiKeys = new Set();
 
-    // Get the alpine huts and the wilderness huts
-    var maxPoi = 2
-    get_poi("json/alpine_hut.json", houseIcon, true, maxPoi, poiLayers);
-    get_poi("json/wilderness_hut.json", hutIcon, true, maxPoi, poiLayers);
-    //get_poi("json/viewpoint.json", viewpointIcon, true, maxPoi, viewpointLayer);
-    //get_poi("json/peak.json", peakIcon, false);
-    get_poi("json/paragliding.json", paraglidingIcon, true, maxPoi, paraglidingLayer);
-			
-    // Add the search bar for addresses
-		L.Control.geocoder({'placeholder': 'Search for locations'}).setPosition('topleft').addTo(map);
+    var poiRequestCount = 4;
+    get_poi("json/alpine_hut.json",     houseIcon,       poiRequestCount, poiLayers);
+    get_poi("json/wilderness_hut.json", hutIcon,         poiRequestCount, poiLayers);
+    get_poi("json/viewpoint.json",      viewpointIcon,   poiRequestCount, viewpointLayer);
+    get_poi("json/paragliding.json",    paraglidingIcon, poiRequestCount, paraglidingLayer);
 
-		// And add a search bar for the huts
+    // Address geocoder search bar
+    L.Control.geocoder({ placeholder: 'Search for locations' }).setPosition('topleft').addTo(map);
+
+    // Hut name search bar
     L.control.search({
       layer: poiLayers,
       initial: false,
-			textPlaceholder: 'Search for huts',
+      textPlaceholder: 'Search for huts',
       propertyName: 'title',
-      buildTip: function(text, val) {
-        return '<a href="#">' + text + '</a>';
-      }
+      buildTip: function (text) { return '<a href="#">' + text + '</a>'; }
     }).addTo(map);
-    
-    // Add a button to switch everything on/off
-    overlayMaps['Huts'] = poiLayers;
-    overlayMaps['Paragliding'] = paraglidingLayer;
-    //overlayMaps['Viewpoints'] = viewpointLayer;
 
-    // ------------------------------------------------------------
-    // Look for GPX tracks and add them to the map
-    // Only show them if asked (gpx=1)
-    var showGpx = JSON.parse(urlParams.get('showGpx'));
-		var fileNames = new Array();
-    
-    var gpxTracks = L.layerGroup()
+    // Register POI groups as toggleable overlays
+    overlayPoiMaps['Paragliding'] = paraglidingLayer;
+    overlayPoiMaps['Huts']        = poiLayers;
+    overlayPoiMaps['Viewpoints']  = viewpointLayer;
+
+
+    // ============================================================
+    // GPX TRACKS
+    // ============================================================
+
+    var gpxTracks = L.layerGroup();
+
     $.ajax({
       url: "./dist/gpx/",
-      success: function(data){
-         $(data).find("td > a").each(function(){
-           if ($(this).attr("href").endsWith(".gpx"))
-           {
-              var gpx = "./dist/gpx/" + $(this).attr("href"); // URL to your GPX file or the GPX itself
-              var fileName = decodeURI($(this).attr("href"));
-              var tracks = new L.GPX(gpx, {
-                async: true,
-                marker_options: {
-                  startIconUrl: 'images/pin-icon-start.png',
-                  endIconUrl: 'images/pin-icon-end.png',
-                  shadowUrl: 'images/pin-shadow.png',
-                  wptIconUrls: {
-                    '': '',
-                  },
-                  popupAnchor: [0, -50],
-                },
-              }).on('loaded', function(e) {
-                var gpx = e.target
-                
-                var keys = ["File Name", "Distance", "Total Time", "Start", "End", "Elevation +", "Elevation -", "Max Altitude", "Min Altitude"];
-                var funcs = [fileName,
-                             (gpx.get_distance() / 1000).toFixed(2) + " km", 
-                             msToTime(gpx.get_total_time()), 
-                             gpx.get_start_time().toUTCString(), 
-                             gpx.get_end_time().toUTCString(), 
-                             (gpx.get_elevation_gain()).toFixed(0) + " m",
-                             (gpx.get_elevation_loss()).toFixed(0) + " m", 
-                             (gpx.get_elevation_max()).toFixed(0) + " m", 
-                             (gpx.get_elevation_min()).toFixed(0) + " m",
-                            ];
+      success: function (data) {
+        $(data).find("td > a").each(function () {
+          if (!$(this).attr("href").endsWith(".gpx")) return;
 
-                var popupContent = "";
-                keys.forEach((key, index) => {
-                  popupContent = popupContent + "<dt>" + key + "</dt><dd>" + funcs[index] + "<dd>";
-                });
-                gpx.bindPopup(popupContent);
-              });
-             tracks.addTo(gpxTracks);
-           }  
-         });
+          var gpxUrl   = "./dist/gpx/" + $(this).attr("href");
+          var fileName = decodeURI($(this).attr("href"));
+
+          var tracks = new L.GPX(gpxUrl, {
+            async: true,
+            marker_options: {
+              startIconUrl: 'images/pin-icon-start.png',
+              endIconUrl:   'images/pin-icon-end.png',
+              shadowUrl:    'images/pin-shadow.png',
+              wptIconUrls:  { '': '' },
+              popupAnchor:  [0, -50],
+            },
+          }).on('loaded', function (e) {
+            var gpx  = e.target;
+            var keys = ["File Name", "Distance", "Total Time", "Start", "End",
+                        "Elevation +", "Elevation -", "Max Altitude", "Min Altitude"];
+            var vals = [
+              fileName,
+              (gpx.get_distance() / 1000).toFixed(2) + " km",
+              msToTime(gpx.get_total_time()),
+              gpx.get_start_time().toUTCString(),
+              gpx.get_end_time().toUTCString(),
+              gpx.get_elevation_gain().toFixed(0) + " m",
+              gpx.get_elevation_loss().toFixed(0) + " m",
+              gpx.get_elevation_max().toFixed(0)  + " m",
+              gpx.get_elevation_min().toFixed(0)  + " m",
+            ];
+            var popupContent = "";
+            keys.forEach(function (key, i) {
+              popupContent += "<dt>" + key + "</dt><dd>" + vals[i] + "</dd>";
+            });
+            gpx.bindPopup(popupContent);
+          });
+          tracks.addTo(gpxTracks);
+        });
       }
-    }); 
-   overlayMaps['GPX'] = gpxTracks;
+    });
+    overlayPoiMaps['GPX'] = gpxTracks;
+    var overlayMaps = Object.assign({}, overlayTileMaps, overlayPoiMaps);
 
-    // Add a control for all those layers
-    var control_layer = L.control.layers(baseMaps, overlayMaps, {position: 'topleft'}).addTo(map);
+    // Persist per-overlay opacity in URL as: opacity={"Overlay Name":0.7,...}
+    var overlayOpacityMap = getJsonUrlParam('opacity', {});
+    if (!overlayOpacityMap || typeof overlayOpacityMap !== 'object') {
+      overlayOpacityMap = {};
+    }
 
-    // If there's an indication on which map to use, take it
+    function clampOpacity(value) {
+      var n = parseFloat(value);
+      if (isNaN(n)) return null;
+      if (n < 0) return 0;
+      if (n > 1) return 1;
+      return n;
+    }
+
+    function applyOverlayOpacityFromUrl() {
+      for (var name in overlayOpacityMap) {
+        if (!overlayOpacityMap.hasOwnProperty(name)) continue;
+        var layer = overlayMaps[name];
+        if (!layer || typeof layer.setOpacity !== 'function') continue;
+
+        var value = clampOpacity(overlayOpacityMap[name]);
+        if (value === null) continue;
+        layer.setOpacity(value);
+        layer.options.opacity = value;
+      }
+    }
+
+    function updateOverlayOpacityUrl(name, value) {
+      var clamped = clampOpacity(value);
+      if (clamped === null) return;
+
+      overlayOpacityMap[name] = Math.round(clamped * 100) / 100;
+      replaceJsonQueryParam('opacity', overlayOpacityMap);
+    }
+
+
+    // ============================================================
+    // LAYER CONTROL + RESTORE STATE FROM URL
+    // ============================================================
+
+    var control_layer = L.control.layers(baseMaps, overlayMaps, {
+      position: 'topleft',
+      collapsed: false,
+    }).addTo(map);
+
+    // Add titles and separators inside the layer control panel for better organization
+    function decorateLayerPanelSections() {
+      var container = control_layer.getContainer();
+      if (!container) return;
+
+      var baseList = container.querySelector('.leaflet-control-layers-base');
+      var overlayList = container.querySelector('.leaflet-control-layers-overlays');
+      if (!baseList || !overlayList) return;
+
+      // Remove previous custom headings/separators before rebuilding.
+      var oldDecor = container.querySelectorAll('[data-layer-decor="1"]');
+      for (var i = 0; i < oldDecor.length; i++) oldDecor[i].remove();
+
+      function makeTitle(text) {
+        var el = document.createElement('div');
+        el.className = 'layer-group-title';
+        el.setAttribute('data-layer-decor', '1');
+        el.textContent = text;
+        el.style.cssText = 'font-weight:600;font-size:12px;margin:4px 0 2px 0;';
+        return el;
+      }
+
+      var baseTitle = makeTitle('Base Maps');
+      baseList.insertBefore(baseTitle, baseList.firstChild);
+
+      var labels = overlayList.querySelectorAll('label');
+      var firstTileLabel = null;
+      var firstPoiLabel = null;
+
+      for (var j = 0; j < labels.length; j++) {
+        var span = labels[j].querySelector('span');
+        if (!span) continue;
+        var name = span.textContent.trim();
+
+        if (!firstTileLabel && overlayTileMaps[name]) firstTileLabel = labels[j];
+        if (!firstPoiLabel && overlayPoiMaps[name]) firstPoiLabel = labels[j];
+      }
+
+      if (firstTileLabel) {
+        overlayList.insertBefore(makeTitle('Tile Overlays'), firstTileLabel);
+      }
+
+      if (firstPoiLabel) {
+        var hr = document.createElement('div');
+        hr.className = 'leaflet-control-layers-separator';
+        hr.setAttribute('data-layer-decor', '1');
+        overlayList.insertBefore(hr, firstPoiLabel);
+        overlayList.insertBefore(makeTitle('POI & Tracks'), firstPoiLabel);
+      }
+    }
+
+    decorateLayerPanelSections();
+    applyOverlayOpacityFromUrl();
+
+    function refreshLayerControlUi() {
+      setTimeout(function () {
+        decorateLayerPanelSections();
+        installLayerOpacitySliders();
+      }, 0);
+    }
+
+    // Inject opacity sliders inside each tile layer row.
+    // This must be rerun whenever Leaflet refreshes the layer control DOM.
+    function installLayerOpacitySliders() {
+      var inputs = control_layer._layerControlInputs;
+      for (var i = 0; i < inputs.length; i++) {
+        var input = inputs[i];
+        var row = input.parentNode;
+        if (!row) continue;
+
+        var obj = control_layer._getLayer(input.layerId);
+        if (!obj) continue;
+        var existing = row.querySelector('.layer-opacity-wrapper');
+
+        // Only show sliders for active overlays (not base layers, not inactive overlays).
+        var shouldShowSlider = obj.overlay && input.checked;
+        if (!shouldShowSlider) {
+          if (existing) existing.remove();
+          continue;
+        }
+
+        // Avoid duplicate sliders when we refresh after control updates.
+        if (existing) continue;
+
+        var layer = obj.layer;
+        if (typeof layer.setOpacity !== 'function') continue;
+
+        var opacity = (layer.options.opacity != null) ? layer.options.opacity : 1;
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'layer-opacity-wrapper';
+        wrapper.style.cssText = 'display:flex;align-items:center;gap:4px;margin:2px 0 0 22px;';
+
+        var slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '1';
+        slider.step = '0.05';
+        slider.value = String(opacity);
+        slider.style.cssText = 'width:80px;cursor:pointer;';
+
+        var pct = document.createElement('span');
+        pct.textContent = Math.round(opacity * 100) + '%';
+        pct.style.cssText = 'font-size:10px;min-width:32px;text-align:right;';
+
+        (function (l, s, p, layerName) {
+          s.addEventListener('input', function () {
+            l.setOpacity(parseFloat(s.value));
+            p.textContent = Math.round(parseFloat(s.value) * 100) + '%';
+          });
+          s.addEventListener('change', function () {
+            updateOverlayOpacityUrl(layerName, s.value);
+          });
+          L.DomEvent.on(s, 'click', L.DomEvent.stopPropagation);
+          L.DomEvent.on(s, 'mousedown', L.DomEvent.stopPropagation);
+          L.DomEvent.on(s, 'touchstart', L.DomEvent.stopPropagation);
+        })(layer, slider, pct, obj.name);
+
+        wrapper.appendChild(slider);
+        wrapper.appendChild(pct);
+
+        // Row structure is: <label><div><input/><span>name</span></div></label>
+        // Add slider within the same inner <div> so it remains visible and aligned.
+        row.appendChild(wrapper);
+      }
+    }
+
+    installLayerOpacitySliders();
+
+    // Restore base map from URL
     var mapSelection = urlParams.get('basemap');
-    if (Object.keys(baseMaps).indexOf(mapSelection) > -1)
-    {
+    if (Object.keys(baseMaps).indexOf(mapSelection) > -1) {
       map.removeLayer(opentopo_tiles);
       baseMaps[mapSelection].addTo(map);
     }
 
-    // Add the huts to the defaultOverlays
-    defaultOverlays.push("Huts");
-    var l = defaultOverlays;
-    for (var i = 0; i < defaultOverlays.length; i++)
-      activeLayers.push(l[i]);
+    // Restore overlay selection from URL
+    // Deterministic approach: remove every overlay first, then re-add only the selected ones
+    var overlaySelection = defaultOverlays.slice();
+    var parsedOverlays = getJsonUrlParam('overlays', null);
+    if (Array.isArray(parsedOverlays)) overlaySelection = parsedOverlays;
 
-    // If there's an indication on which overlay layers to use
-    // First remove all of them and then add the ones we have
-    var overlaySelection = JSON.parse(urlParams.get('overlays'));
-    if (!overlaySelection)
-      overlaySelection = defaultOverlays;
-
-    for (var key of defaultOverlays)
-    {
-      map.removeLayer(overlayMaps[key]);
-    }
-    for (var i = 0; i < overlaySelection.length; i++)
-    {
-      overlayMaps[overlaySelection[i]].addTo(map);      
+    for (var key in overlayMaps) { map.removeLayer(overlayMaps[key]); }
+    for (var i = 0; i < overlaySelection.length; i++) {
+      if (overlayMaps[overlaySelection[i]])
+        overlayMaps[overlaySelection[i]].addTo(map);
     }
 
-    // --------------------------------------------------------------------------
-    // Create markers depending on the type of marker: end or start of the route?
+    if (overlaySelection.indexOf('Open Slopes') > -1)
+      document.getElementById('legend-slope').style.display = 'block';
 
-    function createMarker(i, waypoint, n)
-    {
-      var icon = new L.Icon.Default();
+    // Initial URL restore above can rebuild layer-control rows.
+    // Run once more so sliders are visible immediately on first load.
+    refreshLayerControlUi();
+
+    // Leaflet can rebuild the layer control list when layers are toggled.
+    // Reinject sliders right after those updates.
+    map.on('overlayadd overlayremove baselayerchange', function () {
+      refreshLayerControlUi();
+    });
+
+
+    // ============================================================
+    // ROUTING
+    // ============================================================
+
+    // --- Waypoint marker factory ---
+    function createMarker(i, waypoint, n) {
+      var isEndpoint = (i === 0 || i === n - 1);
+      var icon  = waypoint.significant ? significantViaIcon : viaIcon;
       var title = '';
-      if (i == 0)
-      {
-        icon = startIcon;
-        title = "Start";
+      if (i === 0)     { icon = startIcon; title = "Start"; }
+      if (i === n - 1) { icon = endIcon;   title = "End";   }
+      if (!title) title = "Via " + i;
+
+      var markerTitle = (waypoint.name && waypoint.name.trim().length > 0) ? waypoint.name : title;
+      var marker = L.marker(waypoint.latLng, { icon: icon, title: markerTitle, draggable: true });
+      var popupHtml = '';
+      if (!isEndpoint) {
+        var significantLabel = waypoint.significant ? 'Mark as normal' : 'Mark as significant';
+        popupHtml += '<a href="#" onClick="toggleWaypointSignificant(' + i + '); return false;">' + significantLabel + '</a><br><br>';
       }
-      if (i == n-1)
-      {
-        icon = endIcon;
-        title = "End";
-      }
-
-      if (!title)
-        title = "Via " + i;
-
-      var marker =  L.marker(waypoint.latLng, {
-              icon: icon,
-              title: title,
-              draggable: true,
-      });
-
-      var popup = '<a href="#" onClick="removeWaypoint(' + i + ')">Remove waypoint</a>';
-      var popup = popup + '<br><br><a href="#" onClick="invertRoute()">Invert Route</a>';
-      marker.bindPopup(popup);
-
+      popupHtml += '<a href="#" onClick="removeWaypoint(' + i + ')">Remove waypoint</a>' +
+                   '<br><br><a href="#" onClick="invertRoute()">Invert Route</a>';
+      marker.bindPopup(popupHtml);
       return marker;
     }
 
-    // Add the possibility to remove the waypoint via the popup
-    function removeWaypoint(waypoint)
-    {
-      // Remove at index 'waypoint' one element
-			control.spliceWaypoints(waypoint, 1);
+    function toggleWaypointSignificant(index) {
+      var waypoints = control.getWaypoints();
+      if (index <= 0 || index >= waypoints.length - 1) return;
+
+      waypoints[index].significant = !waypoints[index].significant;
+      control.setWaypoints(waypoints);
     }
 
-    // Add the possibility to invert the route
-    function invertRoute()
-    {
-      var wp = control.getWaypoints().reverse();
-      control.setWaypoints(wp);
+    function removeWaypoint(index) {
+      control.spliceWaypoints(index, 1);
     }
-    
-    // Add the routing feature itself
-		var geocoder =  L.Control.Geocoder.nominatim();
+
+    function invertRoute() {
+      control.setWaypoints(control.getWaypoints().reverse());
+    }
+
+    // Set start/end from right-click context menu
+    function startHere() {
+      control.spliceWaypoints(0, 1, cursorLatLng);
+    }
+
+    function endHere() {
+      control.spliceWaypoints(control.getWaypoints().length - 1, 1, cursorLatLng);
+    }
+
+    // --- Router backends ---
+    var geocoder = L.Control.Geocoder.nominatim();
+
     var openRouteService = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
-    var brouterWalking = new L.Routing.brouter('hiking-beta', '');
-    var brouterCycling = new L.Routing.brouter('fastbike', '');
-		
-    // Define the routers and a default one: the first
-		var routers = new Array(openRouteService, brouterWalking, brouterCycling);
-		var router = routers[0];
-    var plan = new L.Routing.Plan([], {
-                        createMarker: createMarker,
-                        addWaypoints: true,
-                        geocoder: geocoder,
-                        routeur: router,
-                    });
-    var lineOptions = {styles: [{color: 'black', opacity: 0.15, weight: 9}, {color: 'white', opacity: 0.8, weight: 6}, {color: 'red', opacity: 1, weight: 3}]};
+    var brouterWalking   = new L.Routing.brouter('hiking-mountain', '');
+    var brouterCycling   = new L.Routing.brouter('trekking', '');
+    var straightLine     = new L.Routing.StraightLine();
 
-		var control = L.Routing.control({
-			routeWhileDragging: false,
-			geocoder: geocoder,
-			router: router,
+    // Mix in L.Evented so router objects satisfy the Leaflet 1.9.x interface
+    L.Util.extend(openRouteService, L.Evented.prototype);
+    L.Util.extend(brouterWalking,   L.Evented.prototype);
+    L.Util.extend(brouterCycling,   L.Evented.prototype);
+    L.Util.extend(straightLine,     L.Evented.prototype);
+
+    var routers = [openRouteService, brouterWalking, brouterCycling, straightLine];
+    var router  = routers[0];
+
+    // --- Routing control ---
+    var plan = new L.Routing.Plan([], {
+      createMarker: createMarker,
+      addWaypoints: true,
+      geocoder: geocoder,
+      maxGeocoderTolerance: 500,
+      routeur: router,
+    });
+
+    var lineOptions = {
+      styles: [
+        { color: 'black', opacity: 0.15, weight: 9 },
+        { color: 'white', opacity: 0.8,  weight: 6 },
+        { color: 'blue',   opacity: 1,    weight: 3 },
+      ]
+    };
+
+    var control = L.Routing.control({
+      routeWhileDragging: false,
+      geocoder: geocoder,
+      router: router,
       plan: plan,
       lineOptions: lineOptions,
       summaryTemplate: `
@@ -809,192 +910,151 @@
           <li>Total E-: {NegativeElevation} m</li>
           <li>Max Length E+: {maxLenElevation} m</li>
           <li>Max Length E-: {minLenElevation} m</li>
-          <li>Δ            : {topElevation} m</li>
+          <li>&#x394;            : {topElevation} m</li>
         </ul>
         <center>
           <input type="button" value="Export to GPX" onclick="exportGPX()">
         </center>
         </h3>
       `
-		}).addTo(map);
-    
-    // ------------------------------------------------------------
-    // Add a control to change the router
-    var dictRouters = {'OpenRouteService Walking': [routers[0], 'walking_man.png'],
-                       'Brouter Walking': [routers[1], 'walking_man.png'],
-                       'Brouter Cycling': [routers[2], 'bike.png'],
-                      }
+    }).addTo(map);
+
+    // --- Router switcher control (shows per-router icon buttons) ---
+    var dictRouters = {
+      'OpenRouteService Walking': [routers[0], 'walking_man.png'],
+      'Brouter Walking':          [routers[1], 'walking_man.png'],
+      'Brouter Cycling':          [routers[2], 'bike.png'],
+      'Straight Line':            [routers[3], 'bird.png'],
+    };
     var routingCtrl = new RoutingControl(dictRouters, control, routers[0]);
     routingCtrl.addTo(map);
 
-    // ------------- NOT USED ANYMORE
-		var toggle = L.easyButton({
-			states: [
-			{
-				stateName: 'brouter-router',
-        icon: '<img style="width:130%; margin-left:-3px; margin-top:2px;"  src="./dist/img/brt.png">',
-				title: 'Click to Use Brouter Router',
 
-				onClick: function(_control) {
-					_control.state('openrouteservice-router');
-					var waypoints = control.getWaypoints();
+    // ============================================================
+    // WAYPOINTS — URL sync (save/restore waypoints and router)
+    // ============================================================
 
-					router = routers[1];
-					control.setRouter(router);
-					control.setWaypoints(waypoints);
-				},
-			},
-			{
-				stateName: 'openrouteservice-router',
-        icon: '<img style="width:130%; margin-left:-3px; margin-top:2px;"  src="./dist/img/ors.png">',
-				title: 'Click to Use OpenRouteService Router',
-				onClick: function(_control) {
-					_control.state('brouter-router');
-					var waypoints = control.getWaypoints();
-
-					router = routers[0];
-					control.setRouter(router);
-					control.setWaypoints(waypoints);
-				}
-			}, 
-		]
-		});
-		//toggle.addTo(map);
-    // ------------- NOT USED ANYMORE
-
-
-    // ------------------------------------------------------------
-    // Waypoints via URL
-    function updateWaypointUrl()
-    {
-      var waypoints = control.getWaypoints();
-      var waypointsUrl = []
-      for (var i = 0; i < waypoints.length; i++)
-      {
-        if (waypoints[i].latLng)
-        {
-          var array = Array(waypoints[i].latLng.lat, waypoints[i].latLng.lng);
-          waypointsUrl.push(array);
-          var newUrl = UpdateQueryString('waypoints', encodeURIComponent(JSON.stringify(waypointsUrl)));
-          history.pushState({}, null, newUrl);
-        
-          // Update Router as well
-          newUrl = UpdateQueryString('router', encodeURIComponent(JSON.stringify(routingCtrl.getCurrentRouterName())));
-          history.pushState({}, null, newUrl);
-        }
-      }
+    function serializeWaypointForUrl(wp) {
+      var encoded = [wp.latLng.lat, wp.latLng.lng];
+      if (wp.significant) encoded.push(1);
+      return encoded;
     }
 
-    control.getPlan().addEventListener("waypointsspliced", e => {
+    function waypointFromUrlData(data) {
+      var latLng;
+      var significant = false;
+
+      if (Array.isArray(data)) {
+        latLng = new L.latLng(data[0], data[1]);
+        significant = !!data[2];
+      } else if (data && typeof data === 'object') {
+        latLng = new L.latLng(data.lat, data.lng);
+        significant = !!data.significant;
+      } else {
+        return null;
+      }
+
+      var waypoint = L.Routing.waypoint(latLng);
+      waypoint.significant = significant;
+      return waypoint;
+    }
+
+    function updateWaypointUrl() {
+      var waypointsUrl = control.getWaypoints()
+        .filter(function (wp) { return wp.latLng; })
+        .map(function (wp)    { return serializeWaypointForUrl(wp); });
+
+      var newUrl = waypointsUrl.length > 0
+        ? UpdateQueryString('waypoints', encodeURIComponent(JSON.stringify(waypointsUrl)))
+        : UpdateQueryString('waypoints', null);
+      history.pushState({}, null, newUrl);
+
+      pushJsonQueryParam('router', routingCtrl.getCurrentRouterName());
+    }
+
+    control.getPlan().on("waypointsspliced", function () { updateWaypointUrl(); });
+    control.getPlan().on("waypointschanged", function (e) {
       updateWaypointUrl();
-    });
-    control.getPlan().addEventListener("waypointschanged", e => {
-      updateWaypointUrl();
+      // Hide elevation chart when there are fewer than 2 waypoints
+      var validWaypoints = e.waypoints.filter(function (wp) { return wp.latLng; }).length;
+      if (validWaypoints < 2 && el) {
+        el.clear();
+        if (el._container) el.hide();
+      }
     });
 
-    var waypoints = urlParams.get('waypoints');
-    if (waypoints)
-    {
-      var points = JSON.parse(waypoints);
-      for (var i = 0; i < points.length; i++)
+    // Restore waypoints from URL
+    var points = getJsonUrlParam('waypoints', null);
+    if (points) {
+      for (var i = 0; i < points.length; i++) {
+        var waypoint = waypointFromUrlData(points[i]);
+        if (!waypoint) continue;
         if (i < 2)
-          control.spliceWaypoints(i, 1, new L.latLng(points[i]));
+          control.spliceWaypoints(i, 1, waypoint);
         else
-          control.spliceWaypoints(i, 0, new L.latLng(points[i]));
-    }
-    // ------------------------------------------------------------
-    
-    var routerUri = JSON.parse(urlParams.get('router'));
-    if (routerUri)
-    {
-      // Check the router given actually exists
-      if (Object.keys(dictRouters).includes(routerUri))
-      {
-        // Get the element and click on it. I don't want to code properly.
-        var div = document.getElementsByClassName("leaflet-control-layers-custom-toggle")[0];
-        div = div.parentNode.getElementsByTagName("section")[0].getElementsByTagName("div")[0];
-        
-        var input;
-        var span;
-        // Look for the element we need
-        for (var i = 0; i < div.children.length; i++)
-        {
-          input = div.children[i].children[0].children[0];
-          span = div.children[i].children[0].children[1].textContent.trim();
-
-          if (span == routerUri)
-          {
-            input.click();
-            break;
-          }
-        }
+          control.spliceWaypoints(i, 0, waypoint);
       }
     }
-    
 
-		// ------------------------------------------------------------
-		// Functions to add the current position to the geocoder and start routing
-		function startHere()
-		{
-			var pos = cursorLat + " " + cursorLng;
-			control.spliceWaypoints(0, 1, cursorLatLng);
-		}
-		
-		function endHere()
-		{
-			var pos = cursorLat + " " + cursorLng;
-			control.spliceWaypoints(control.getWaypoints().length - 1, 1, cursorLatLng);
-		}
-		
-    // ------------------------------------------------------------
-    // Add the elevation once it's done routing
-    var el = L.control.elevation({
-              position: "bottomleft",
-    });
+    // Restore router selection from URL (simulates a click on the matching radio button)
+    var routerUri = getJsonUrlParam('router', null);
+    if (routerUri && Object.keys(dictRouters).includes(routerUri)) {
+      var div = document.getElementsByClassName("leaflet-control-layers-custom-toggle")[0];
+      div = div.parentNode.getElementsByTagName("section")[0].getElementsByTagName("div")[0];
+      for (var i = 0; i < div.children.length; i++) {
+        var input = div.children[i].children[0].children[0];
+        var span  = div.children[i].children[0].children[1].textContent.trim();
+        if (span === routerUri) { input.click(); break; }
+      }
+    }
 
-    function addElevation()
-    {
-      var coordinates = control.getCoordinates();
+
+    // ============================================================
+    // ELEVATION PROFILE
+    // ============================================================
+
+    var el = L.control.elevation({ position: "bottomleft" });
+
+    function addElevation(route) {
       el.clear();
-
-      var geojson = {"name":"NewFeatureType", 
-                     "type":"FeatureCollection",
-                     "features": [
-                       {"type": "Feature",
-                        "geometry": {"type": "LineString", 
-                                     "coordinates":[]
-                                    },
-                         "properties": null
-                       }
-                     ]
-      }
-      var elevations = control.getElevations();
-      for (var i = 0; i < coordinates.length; i++)
-        geojson['features'][0]['geometry']['coordinates'].push(new Array(coordinates[i].lng, coordinates[i].lat, elevations[i]));
-    
-      var gjl = L.geoJson(geojson,{
-		    onEachFeature: el.addData.bind(el)
-      });
-
+      // addTo must be called before addData, otherwise the chart container is null
       el.addTo(map);
-    }
-    
-    control.addEventListener("routeselected", e => {
-      addElevation();
-    });
 
-    // ------------------------------------------------------------
-    // Add a button to export the GPX track
-    function exportGPX()
-    {
-      var baseUrl = "https://brouter.de/brouter?lonlats=";
+      var geojson = {
+        name: "NewFeatureType",
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: [] },
+          properties: null,
+        }]
+      };
+
+      var coords     = route.coordinates;
+      var elevations = route.elevations;
+      for (var i = 0; i < coords.length; i++)
+        geojson.features[0].geometry.coordinates.push([coords[i].lng, coords[i].lat, elevations[i]]);
+
+      L.geoJson(geojson, { onEachFeature: el.addData.bind(el) });
+    }
+
+    control.on("routesfound", function (e) { addElevation(e.routes[0]); });
+
+
+    // ============================================================
+    // GPX EXPORT
+    // ============================================================
+
+    function exportGPX() {
+      var baseUrl   = "https://brouter.de/brouter?lonlats=";
       var waypoints = control.getWaypoints();
       for (var i = 0; i < waypoints.length; i++)
         baseUrl += waypoints[i].latLng.lng + ',' + waypoints[i].latLng.lat + "|";
       baseUrl += "&profile=hiking-beta&alternativeidx=0&format=gpx&exportWaypoints=1";
-
       window.location.href = baseUrl;
     }
+
   </script>
 </body>
+
 </html>
