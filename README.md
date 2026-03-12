@@ -12,7 +12,7 @@ only.
 Interactive Leaflet map for ski touring planning with:
 
 - Multiple base maps (OutdoorActive, OpenTopoMap, OSM, IGN, Satellite)
-- Snow-related overlays (OpenSlopeMap steepness, ski pistes, IGN winter layers, Strava heatmap)
+- Snow-related overlays (OpenSlopeMap steepness, ski pistes, IGN winter layers)
 - Route planning with multiple routers, including off-trail straight-line routing
 - Elevation profile and route statistics
 - POI overlays (huts, viewpoints, paragliding spots)
@@ -51,7 +51,6 @@ Then open: `http://localhost:8000/map.html`
 - IGN Trace Hivernale
 - Open Slopes
 - Ski Pistes
-- Strava Ski Heatmap
 - Paragliding
 - Huts
 - Viewpoints
@@ -122,7 +121,7 @@ On map right-click:
 ## Data Sources
 
 - Base/overlay map tiles: OutdoorActive, OpenStreetMap, OpenTopoMap, IGN (data.geopf.fr),
-OpenSlopeMap, OpenSnowMap, Strava-style tiles
+OpenSlopeMap, OpenSnowMap tiles
 - POIs: OpenStreetMap data via Overpass API (saved as local JSON)
 - GPX: Local files in `dist/gpx/`
 

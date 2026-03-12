@@ -225,7 +225,6 @@
     var opentopoStr = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png';
     var pistesStr   = 'http://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png';
     var slopesStr   = 'https://tileserver1.openslopemap.org/OSloOVERLAY_LR_All_16/{z}/{x}/{y}.png';
-    var stravaStr   = 'https://atlas.hartakji.com/strava-backcountry-ski/{z}/{x}/{y}.png';
 
     // Builds a standard IGN WMTS URL for data.geopf.fr (PNG, TileMatrixSet PM)
     function layerUrlPublic(layer) {
@@ -283,10 +282,6 @@
       maxZoom: 18, minZoom: 2, opacity: 1,
     });
 
-    var strava_tiles = L.tileLayer(stravaStr, {
-      maxZoom: 15, minZoom: 2, opacity: 0.5,
-    });
-
     // --- Layer dictionaries (POI overlays are added later, after they load) ---
     var baseMaps = {
       "OpenTopoMap":            opentopo_tiles,
@@ -302,7 +297,6 @@
       "IGN Trace Hivernale":    ign_hivernal,
       "Open Slopes":            slopes_tiles,
       "Ski Pistes":             pistes_tiles,
-      "Strava Ski Heatmap":     strava_tiles,
     };
 
     var overlayPoiMaps = {};
