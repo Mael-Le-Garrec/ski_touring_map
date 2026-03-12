@@ -3,8 +3,8 @@
 ## Demo
 
 Available on [https://maps.hatrix.fr/ski_touring/](https://maps.hatrix.fr/ski_touring/)
-Only to be used for checking out the app. I only download locally the data for some parts of Europe
-that I have interest in.
+Only to be used for checking out the app. I downloaded locally the data for some parts of Europe 
+only.
 
 ![Ski Touring Index Map](./images/ski_touring_map_html.png)
 
