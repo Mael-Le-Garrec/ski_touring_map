@@ -894,7 +894,9 @@
     var openRouteService = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
     var brouterWalking   = new L.Routing.brouter('hiking-mountain', '');
     var brouterCycling   = new L.Routing.brouter('trekking', '');
-    var straightLine     = new L.Routing.StraightLine();
+    //var straightLine     = new L.Routing.StraightLine();
+    // To use the local elevation server (see elevation_server/README.md):
+    var straightLine = new L.Routing.StraightLine({ elevationApiBaseUrl: 'https://elevations.hatrix.fr/v1/elevation' });
 
     // Mix in L.Evented so router objects satisfy the Leaflet 1.9.x interface
     L.Util.extend(openRouteService, L.Evented.prototype);
@@ -923,7 +925,9 @@
     };
 
     var control = L.Routing.control({
+      autoRoute: true,
       routeWhileDragging: false,
+      fitSelectedRoutes: false,
       geocoder: geocoder,
       router: router,
       plan: plan,
@@ -1009,6 +1013,14 @@
       }
     });
 
+    // Restore router selection from URL
+    var routerUri = getJsonUrlParam('router', null);
+    if (routerUri) {
+      if (Object.keys(dictRouters).includes(routerUri)) {
+        routingCtrl.selectRouterByName(routerUri);
+      }
+    }
+
     // Restore waypoints from URL
     var points = getJsonUrlParam('waypoints', null);
     if (points) {
@@ -1020,13 +1032,11 @@
         else
           control.spliceWaypoints(i, 0, waypoint);
       }
-    }
 
-    // Restore router selection from URL
-    var routerUri = getJsonUrlParam('router', null);
-    if (routerUri) {
-      if (Object.keys(dictRouters).includes(routerUri)) {
-        routingCtrl.selectRouterByName(routerUri);
+      // Force one final route after bulk restore to avoid stale lines when
+      // intermediate auto-route calls race during initialization.
+      if (points.length >= 2) {
+        control.route();
       }
     }
 
