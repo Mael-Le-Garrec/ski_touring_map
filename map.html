@@ -863,7 +863,33 @@
     }
 
     // --- Router backends ---
-    var geocoder = L.Control.Geocoder.nominatim();
+    // Nominatim enforces a strict 1 req/s policy. Wrap the reverse method in a
+    // serial queue so bulk waypoint restores don't trigger 429 rate-limiting.
+    var geocoder = (function () {
+      var nom = L.Control.Geocoder.nominatim();
+      var _queue = [];
+      var _running = false;
+
+      function _drain() {
+        if (_running || _queue.length === 0) return;
+        _running = true;
+        var item = _queue.shift();
+        nom.reverse(item.location, item.scale, function (results) {
+          item.cb.call(item.context, results);
+          // Wait 1 s between requests to stay within Nominatim's usage policy
+          setTimeout(function () { _running = false; _drain(); }, 1100);
+        }, null);
+      }
+
+      return {
+        geocode: function (q, cb, ctx) { nom.geocode(q, cb, ctx); },
+        suggest: nom.suggest ? function (q, cb, ctx) { nom.suggest(q, cb, ctx); } : undefined,
+        reverse: function (location, scale, cb, context) {
+          _queue.push({ location: location, scale: scale, cb: cb, context: context });
+          _drain();
+        }
+      };
+    }());
 
     var openRouteService = new L.Routing.openrouteservice('5b3ce3597851110001cf624802f67373a031434889627fc550c9671f');
     var brouterWalking   = new L.Routing.brouter('hiking-mountain', '');
@@ -921,10 +947,10 @@
 
     // --- Router switcher control (shows per-router icon buttons) ---
     var dictRouters = {
-      'OpenRouteService Walking': [routers[0], 'walking_man.png'],
-      'Brouter Walking':          [routers[1], 'walking_man.png'],
-      'Brouter Cycling':          [routers[2], 'bike.png'],
-      'Straight Line':            [routers[3], 'bird.png'],
+      'OpenRouteService': [routers[0], 'walking_man.png'],
+      'Brouter Walking':  [routers[1], 'hiking-icon.png'],
+      'Brouter Cycling':  [routers[2], 'bike.png'],
+      'Straight Line':    [routers[3], 'bird.png'],
     };
     var routingCtrl = new RoutingControl(dictRouters, control, routers[0]);
     routingCtrl.addTo(map);
@@ -996,15 +1022,11 @@
       }
     }
 
-    // Restore router selection from URL (simulates a click on the matching radio button)
+    // Restore router selection from URL
     var routerUri = getJsonUrlParam('router', null);
-    if (routerUri && Object.keys(dictRouters).includes(routerUri)) {
-      var div = document.getElementsByClassName("leaflet-control-layers-custom-toggle")[0];
-      div = div.parentNode.getElementsByTagName("section")[0].getElementsByTagName("div")[0];
-      for (var i = 0; i < div.children.length; i++) {
-        var input = div.children[i].children[0].children[0];
-        var span  = div.children[i].children[0].children[1].textContent.trim();
-        if (span === routerUri) { input.click(); break; }
+    if (routerUri) {
+      if (Object.keys(dictRouters).includes(routerUri)) {
+        routingCtrl.selectRouterByName(routerUri);
       }
     }
 

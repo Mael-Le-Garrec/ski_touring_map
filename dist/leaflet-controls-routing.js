@@ -1,7 +1,7 @@
 var RoutingControl = L.Control.Layers.extend({
     options: {
       position: 'topleft',
-      collapsed: true
+      collapsed: false
     },
   	
     //
@@ -25,6 +25,28 @@ var RoutingControl = L.Control.Layers.extend({
 
     getCurrentRouterName: function() {
       return this._current;
+    },
+
+    selectRouterByName: function(name) {
+      var targetLayer = null;
+      var targetLayerId = null;
+
+      for (var i = 0; i < this._layers.length; i++) {
+        if (this._layers[i].name === name) {
+          targetLayer = this._layers[i].layer;
+          targetLayerId = L.Util.stamp(targetLayer);
+          break;
+        }
+      }
+
+      if (!targetLayer) return false;
+
+      for (var j = 0; j < this._layerControlInputs.length; j++) {
+        this._layerControlInputs[j].checked = (this._layerControlInputs[j].layerId === targetLayerId);
+      }
+
+      this._onInputClick();
+      return true;
     },
 
     addTo: function (map) {
@@ -179,15 +201,23 @@ var RoutingControl = L.Control.Layers.extend({
 
       L.DomEvent.on(input, 'click', this._onInputClick, this);
 
+      var icon = document.createElement('img');
+      icon.className = 'leaflet-control-routing-icon';
+      icon.src = 'dist/img/' + obj.image;
+      icon.alt = obj.name;
+
       var name = document.createElement('span');
+      name.className = 'leaflet-control-routing-name';
       name.innerHTML = ' ' + obj.name;
 
       // Helps from preventing layer control flicker when checkboxes are disabled
       // https://github.com/Leaflet/Leaflet/issues/2771
       var holder = document.createElement('div');
+      holder.className = 'leaflet-control-routing-option';
 
       label.appendChild(holder);
       holder.appendChild(input);
+      holder.appendChild(icon);
       holder.appendChild(name);
 
       var container = obj.overlay ? this._overlaysList : this._baseLayersList;
@@ -218,7 +248,7 @@ var RoutingControl = L.Control.Layers.extend({
     //
     _initLayout: function () {
       var className = 'leaflet-control-layers',
-          container = this._container = L.DomUtil.create('div', className),
+          container = this._container = L.DomUtil.create('div', className + ' leaflet-control-routing'),
           collapsed = this.options.collapsed;
 
       // makes this work on IE touch devices by stopping it from firing a mouseout event when the touch is released
@@ -228,6 +258,7 @@ var RoutingControl = L.Control.Layers.extend({
       L.DomEvent.disableScrollPropagation(container);
 
       var section = this._section = L.DomUtil.create('section', className + '-list');
+      this._form = section;
 
       if (collapsed) {
         this._map.on('click', this.collapse, this);
@@ -251,15 +282,15 @@ var RoutingControl = L.Control.Layers.extend({
         L.DomEvent.on(link, 'focus', this.expand, this);
       }
 
-      if (!collapsed) {
-        this.expand();
-      }
-
       this._baseLayersList = L.DomUtil.create('div', className + '-base', section);
       this._separator = L.DomUtil.create('div', className + '-separator', section);
       this._overlaysList = L.DomUtil.create('div', className + '-overlays', section);
 
       container.appendChild(section);
+
+      if (!collapsed) {
+        this.expand();
+      }
     },
 
 });

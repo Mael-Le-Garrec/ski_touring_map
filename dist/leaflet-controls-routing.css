@@ -3,3 +3,50 @@
   width: 36px;
   height: 36px;
 }
+
+.leaflet-control-routing .leaflet-control-layers-toggle {
+  display: none;
+}
+
+.leaflet-control-routing .leaflet-control-layers-list {
+  display: block;
+  margin: 0;
+  max-width: 150px;
+}
+
+.leaflet-control-routing .leaflet-control-layers-base {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leaflet-control-routing .leaflet-control-layers-base label {
+  margin: 0;
+}
+
+.leaflet-control-routing .leaflet-control-routing-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 120px;
+  max-width: 150px;
+}
+
+.leaflet-control-routing .leaflet-control-routing-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex: 0 0 18px;
+}
+
+.leaflet-control-routing .leaflet-control-routing-name {
+  flex: 1 1 auto;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.leaflet-control-routing .leaflet-control-layers-overlays,
+.leaflet-control-routing .leaflet-control-layers-separator {
+  display: none;
+}
