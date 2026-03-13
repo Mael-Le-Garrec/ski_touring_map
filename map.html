@@ -278,8 +278,16 @@
       opacity: 0.5,
     });
 
+    // Pistes from OpenSnowMap
     var pistes_tiles = L.tileLayer(pistesStr, {
       maxZoom: 18, minZoom: 2, opacity: 1,
+    });
+
+    // Backcountry ski heatmap, found on a USB key near the top of the Aiguille du Midi
+    var heatMap = L.tileLayer('tiles_server/tiles/{z}/{x}/{y}.png', {
+        maxZoom: 14,
+        minZoom: 7,
+        opacity: 0.5,
     });
 
     // --- Layer dictionaries (POI overlays are added later, after they load) ---
@@ -293,11 +301,12 @@
     };
 
     var overlayTileMaps = {
-      "IGN Slopes":             ign_slopes,
-      "IGN Trace Hivernale":    ign_hivernal,
-      "Open Slopes":            slopes_tiles,
-      "Ski Pistes":             pistes_tiles,
-    };
+      "IGN Slopes":           ign_slopes,
+      "IGN Trace Hivernale":  ign_hivernal,
+      "Open Slopes":          slopes_tiles,
+      "Ski Pistes":           pistes_tiles,
+      "Heat Map":             heatMap
+    }
 
     var overlayPoiMaps = {};
 
