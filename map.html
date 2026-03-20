@@ -564,7 +564,7 @@
     $.ajax({
       url: "./dist/gpx/",
       success: function (data) {
-        $(data).find("td > a").each(function () {
+        $(data).find("a").each(function () {
           if (!$(this).attr("href").endsWith(".gpx")) return;
 
           var gpxUrl   = "./dist/gpx/" + $(this).attr("href");
